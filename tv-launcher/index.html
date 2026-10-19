@@ -261,6 +261,25 @@ button.widget:focus { transform: scale(1.035); background: var(--tile-focus); bo
 .n .src em { font-style: normal; font-weight: 500; color: var(--text2); text-transform: none; letter-spacing: 0; }
 .n p { margin: 6px 0 0; font-size: 22px; font-weight: 500; line-height: 1.28; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
+/* Banners reais dos apps (TV) e destaques com imagem */
+.tile.real { background: #1c1d22; }
+.tile.real img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.art.img { background-size: cover; background-position: center; background-color: #111; }
+.art.img .sil { display: none; }
+.poster .art.img .art-title { display: none; }
+.ambi-note { margin: 0; font-size: 20px; line-height: 1.35; color: var(--text2); }
+
+/* TV: sem desfoques pesados. backdrop-filter e blur grandes travam a GPU da TV. */
+html.tv * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html.tv .blobs i { filter: none; opacity: .9; }
+html.tv .blobs .b1 { background: radial-gradient(closest-side, var(--blob1), transparent); }
+html.tv .blobs .b2 { background: radial-gradient(closest-side, var(--blob2), transparent); }
+html.tv .blobs .b3 { background: radial-gradient(closest-side, var(--blob3), transparent); }
+html.tv .f { transition: transform .16s var(--ease), background .12s, color .12s, opacity .12s; }
+html.tv #content { transition-duration: .35s; }
+html.tv .dock-track { transition-duration: .25s; }
+html.tv .dock, html.tv .widget, html.tv .chip { background: var(--panel); }
+
 /* Painéis */
 #overlay {
   position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
@@ -417,6 +436,17 @@ const store = {
 };
 const clone = o => JSON.parse(JSON.stringify(o));
 const nextOf = (arr, cur) => arr[(arr.indexOf(cur) + 1) % arr.length];
+/* Ponte com o app Android (MainActivity.kt). No navegador do computador não existe e tudo fica simulado. */
+const TV = window.TVBridge || null;
+if (TV) document.documentElement.classList.add('tv');
+const avail = id => !TV || ALL_APPS.some(a => a.id === id);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+/* Busca texto da internet: na TV pelo app Android (sem bloqueio de CORS), no computador pelo fetch. */
+const tvReq = {}; let tvReqN = 0;
+window.tvFetchDone = (id, ok, body) => { const r = tvReq[id]; delete tvReq[id]; if (r) ok ? r.res(body) : r.rej(new Error(body)); };
+const getText = (url, token) => TV
+  ? new Promise((res, rej) => { const id = ++tvReqN; tvReq[id] = { res, rej }; token ? TV.fetchAuth(id, url, token) : TV.fetch(id, url); })
+  : fetch(url, token ? { headers: { Authorization: 'Bearer ' + token } } : {}).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
 
 /* ---------- Ícones ---------- */
 const S = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
@@ -459,7 +489,9 @@ const W = {
   sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="#FFC53D"/><path stroke="#FFC53D" stroke-width="2" stroke-linecap="round" d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>',
   partly: '<svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="4.2" fill="#FFC53D"/><path d="M9.5 20h8.5a3.5 3.5 0 0 0 .4-6.97A5.2 5.2 0 0 0 8.6 14.1 3 3 0 0 0 9.5 20z" fill="currentColor" opacity=".65"/></svg>',
   cloud: '<svg viewBox="0 0 24 24"><path d="M7 19h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 12.2 3.4 3.4 0 0 0 7 19z" fill="currentColor" opacity=".6"/></svg>',
-  moon: '<svg viewBox="0 0 24 24"><path d="M19 14.5A7.5 7.5 0 1 1 9.5 5a6 6 0 0 0 9.5 9.5z" fill="#AEB4D6"/></svg>'
+  moon: '<svg viewBox="0 0 24 24"><path d="M19 14.5A7.5 7.5 0 1 1 9.5 5a6 6 0 0 0 9.5 9.5z" fill="#AEB4D6"/></svg>',
+  rain: '<svg viewBox="0 0 24 24"><path d="M7 15h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 8.2 3.4 3.4 0 0 0 7 15z" fill="currentColor" opacity=".6"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3" stroke="#4FA3FF" stroke-width="2" stroke-linecap="round"/></svg>',
+  storm: '<svg viewBox="0 0 24 24"><path d="M7 15h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 8.2 3.4 3.4 0 0 0 7 15z" fill="currentColor" opacity=".6"/><path d="M12.5 15l-2 4h3l-2 4" stroke="#FFC53D" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
 const APPLE = '<svg viewBox="0 0 24 24"><path d="M16.4 12.7c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6s-2.5-1-2.5-3.8zM14.1 5.8c.6-.8 1.1-1.8.9-2.9-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1.1.1 2.1-.5 2.8-1.3z"/></svg>';
 
@@ -482,13 +514,14 @@ const CONTENT = {
   ]
 };
 const TABS = [['explorar', 'Explorar'], ['filmes', 'Filmes'], ['series', 'Séries']];
+let heroReal = false;   // destaques vindos do TMDB (na TV, sem chave, o bloco fica escondido)
 const SILS = [
   ['M0 30V18l12-8 10 6 13-10 13 9 12-6 14 8 12-9 14 6v16z', 'M0 30V22l18-6 14 5 20-7 16 6 18-4 14 5v9z'],
   ['M0 30V20l20-4 8-12 3 0 8 12 20 3 41-2v13z', 'M0 30V24l30-3 30 2 40-4v11z'],
   ['M0 30V12h8v-6h6v10h8V4h7v12h9V9h6v7h10V2h8v14h7V8h8v8h9V11h14v19z', 'M0 30V22h14v-4h10v5h16v-3h20v4h18v-6h22v12z']
 ];
 
-const ALL_APPS = [
+const DEMO_APPS = [
   { id: 'tv', name: 'TV Aberta', cls: 'a-tv', html: `${ICON.antenna}<span>TV Aberta</span>` },
   { id: 'yt', name: 'YouTube', cls: 'a-yt', html: '<span class="yt-play"></span><span class="yt-t">YouTube</span>' },
   { id: 'prime', name: 'Prime Video', cls: 'a-prime', html: '<span class="pv"><span>prime video</span><svg viewBox="0 0 92 14"><path d="M6 3Q46 15 84 4"/><path d="M78 1.5l7 2.5-4 6"/></svg></span>' },
@@ -505,9 +538,20 @@ const ALL_APPS = [
   { id: 'browser', name: 'Navegador', cls: 'a-br', html: `${ICON.globe}<span>Navegador</span>` },
   { id: 'play', name: 'Play Store', cls: 'a-ps', html: '<span>Play Store</span>' }
 ];
+/* Na TV: os apps instalados, com o banner oficial de cada um (o mesmo da tela inicial original). */
+const PREFERRED = ['com.mediatek.wwtv.tvcenter', 'com.google.android.youtube.tv', 'com.amazon.amazonvideo.livingroom', 'com.netflix.ninja',
+  'com.wbd.stream', 'com.crunchyroll.crunchyroid', 'com.apple.atve.androidtv.appletv', 'com.disney.disneyplus', 'com.globo.globotv', 'com.spotify.tv.android'];
+function realApps() {
+  let list = [];
+  try { list = JSON.parse(TV.listApps()); } catch (e) {}
+  const rank = id => { const i = PREFERRED.indexOf(id); return i < 0 ? 99 : i; };
+  return list.sort((a, b) => rank(a.id) - rank(b.id) || a.name.localeCompare(b.name, 'pt-BR'))
+    .map(a => ({ id: a.id, name: a.name, cls: 'real', html: `<img src="${a.banner}" alt="">` }));
+}
+let ALL_APPS = TV ? realApps() : DEMO_APPS;
 const DOCK_VISIBLE = 8;
 const INPUT_IDS = ['live', 'hdmi1', 'hdmi2', 'hdmi3', 'hdmi4'];
-const NO_SIGNAL = ['hdmi2', 'hdmi4'];
+const NO_SIGNAL = TV ? [] : ['hdmi2', 'hdmi4'];   // simulado só no protótipo
 const NAME_PRESETS = ['', 'PS5', 'Xbox', 'Nintendo Switch', 'Soundbar', 'Apple TV', 'Chromecast', 'PC', 'Decodificador'];
 const NAME_ICON = { 'PS5': 'game', 'Xbox': 'game', 'Nintendo Switch': 'game', 'Soundbar': 'soundbar', 'Apple TV': 'tv', 'Chromecast': 'tv', 'PC': 'monitor', 'Decodificador': 'antenna' };
 const SHORTCUTS = {
@@ -548,8 +592,16 @@ const NEWS = [
   { cat: 'Economia', c: '#ff375f', ago: 'há 5 h', t: 'Pequenos negócios digitais lideram abertura de empresas no trimestre' },
   { cat: 'Clima', c: '#30b0c7', ago: 'há 6 h', t: 'Fim de semana deve ter sol e temperaturas amenas na maior parte do país' }
 ];
-const CITIES = [['São Paulo', 0], ['Rio de Janeiro', 4], ['Belo Horizonte', 1], ['Brasília', 2], ['Salvador', 5], ['Recife', 6], ['Fortaleza', 7], ['Curitiba', -4], ['Porto Alegre', -2], ['Manaus', 9]];
-const SUNRISE = '05:42', SUNSET = '18:12';
+/* Feeds oficiais (RSS) do g1 e do ge por categoria. No navegador do computador o CORS bloqueia: fica o simulado. */
+const NEWS_FEEDS = {
+  Todas: 'https://g1.globo.com/rss/g1/', Tecnologia: 'https://g1.globo.com/rss/g1/tecnologia', Economia: 'https://g1.globo.com/rss/g1/economia',
+  Ciência: 'https://g1.globo.com/rss/g1/ciencia', Saúde: 'https://g1.globo.com/rss/g1/saude', Cultura: 'https://g1.globo.com/rss/g1/pop-arte',
+  Natureza: 'https://g1.globo.com/rss/g1/natureza', Esportes: 'https://ge.globo.com/rss/ge/'
+};
+const NEWS_COLORS = { Tecnologia: '#0a84ff', Economia: '#ff375f', Ciência: '#af52de', Saúde: '#30b0c7', Cultura: '#ff9f0a', Natureza: '#34c759', Esportes: '#34c759' };
+const CITIES = [['São Paulo', -23.55, -46.63], ['Rio de Janeiro', -22.91, -43.17], ['Belo Horizonte', -19.92, -43.94], ['Brasília', -15.79, -47.88],
+  ['Salvador', -12.97, -38.5], ['Recife', -8.05, -34.88], ['Fortaleza', -3.73, -38.52], ['Curitiba', -25.43, -49.27], ['Porto Alegre', -30.03, -51.23], ['Manaus', -3.12, -60.02]];
+let SUNRISE = '05:42', SUNSET = '18:12';   // trocados pelos horários reais da cidade quando o clima carrega
 const CYCLES = {
   accent: [['#0a84ff', 'Azul'], ['#30d158', 'Verde'], ['#ff9f0a', 'Laranja'], ['#ff375f', 'Rosa'], ['#bf5af2', 'Roxo'], ['#8e8e93', 'Grafite']],
   bg: [['gradiente', 'Gradiente suave'], ['vivo', 'Vivo (cor de destaque)'], ['liso', 'Liso']],
@@ -559,7 +611,7 @@ const CYCLES = {
   clock: [['24', '24 horas'], ['12', '12 horas']],
   city: CITIES.map(([c]) => [c, c]),
   unit: [['C', 'Celsius (°C)'], ['F', 'Fahrenheit (°F)']],
-  newsCat: [['Todas', 'Todas'], ['Tecnologia', 'Tecnologia'], ['Esportes', 'Esportes'], ['Clima', 'Clima'], ['Ciência', 'Ciência'], ['Cultura', 'Cultura'], ['Economia', 'Economia']],
+  newsCat: Object.keys(NEWS_FEEDS).map(k => [k, k]),
   newsSpeed: [[6, '6 segundos'], [9, '9 segundos'], [15, '15 segundos']],
   osdDur: [[3, '3 segundos'], [5, '5 segundos'], [8, '8 segundos'], [12, '12 segundos']],
   osdPos: [['inferior', 'Barra inferior'], ['superior', 'Barra superior']]
@@ -622,7 +674,7 @@ function renderHeader() {
   const t = $('#title');
   t.style.display = cfg.title === 'nenhum' ? 'none' : '';
   t.textContent = { 'para-voce': 'Para você', saudacao: greeting(), inicio: 'Início', nenhum: '' }[cfg.title];
-  $('#tabs').style.display = cfg.showTabs ? '' : 'none';
+  $('#tabs').style.display = cfg.showTabs && (!TV || heroReal) ? '' : 'none';
   $('#tabs').innerHTML = TABS.map(([id, l]) => `<button class="tab f ${id === state.tab ? 'active' : ''}" data-act="tab:${id}">${l}</button>`).join('');
   $('#date').style.display = cfg.showDate ? '' : 'none';
   $('#wMini').style.display = cfg.showWeatherTop ? '' : 'none';
@@ -644,6 +696,7 @@ const BLOCK_HTML = {
   widgets: '<section class="block widgets" id="widgets"></section>'
 };
 function blockHasContent(id) {
+  if (id === 'hero') return !TV || heroReal;
   if (id === 'apps') return cfg.apps.some(a => a.on);
   if (id === 'controls') return (cfg.showInputs && INPUT_IDS.some(i => cfg.inputs[i].on)) || (cfg.showShortcuts && cfg.shortcuts.some(s => s.on));
   if (id === 'widgets') return cfg.widgets.some(w => w.on);
@@ -660,21 +713,21 @@ function renderHero() {
   const el = $('#hero'); if (!el) return;
   el.innerHTML = CONTENT[state.tab].map((it, i) => `
     <div class="card ${i ? 'poster' : 'feature'}">
-      <button class="art f" data-act="open:${i}" data-i="${i}" style="${artStyle(it.c)}">
+      <button class="art f${(i ? it.poster : it.back) ? ' img' : ''}" data-act="open:${i}" data-i="${i}" style="${(i ? it.poster : it.back) ? `background-image:url('${i ? it.poster : it.back}')` : artStyle(it.c)}">
         <svg class="sil s1" viewBox="0 0 100 30" preserveAspectRatio="none"><path d="${SILS[i][1]}"/></svg>
         <svg class="sil s2" viewBox="0 0 100 30" preserveAspectRatio="none"><path d="${SILS[i][0]}"/></svg>
         ${i === 0 ? `<span class="art-badge">${it.app}</span>` : ''}
-        <span class="art-title">${it.t}</span>
+        <span class="art-title">${esc(it.t)}</span>
       </button>
-      <div class="cap"><b>${it.t}</b>${i === 0 ? `<small>${it.meta} · ${it.app}</small>` : `<small>${it.app}</small>`}</div>
+      <div class="cap"><b>${esc(it.t)}</b>${i === 0 ? `<small>${esc(it.meta)} · ${it.app}</small>` : `<small>${it.app}</small>`}</div>
     </div>`).join('');
 }
 const appById = id => ALL_APPS.find(a => a.id === id);
 const tileHtml = a => `<span class="tile ${a.cls}">${a.html}</span>`;
 function renderDock() {
   const el = $('#dock'); if (!el) return;
-  el.innerHTML = `<div class="dock-vp"><div class="dock-track">${cfg.apps.filter(a => a.on).map(x => appById(x.id))
-    .map(a => `<button class="tile f ${a.cls}" data-act="app:${a.id}" title="${a.name}">${a.html}</button>`).join('')}</div></div>`;
+  el.innerHTML = `<div class="dock-vp"><div class="dock-track">${cfg.apps.filter(a => a.on && avail(a.id)).map(x => appById(x.id))
+    .map(a => `<button class="tile f ${a.cls}" data-act="app:${a.id}" title="${esc(a.name)}">${a.html}</button>`).join('')}</div></div>`;
   dockX = 0; scrollDock(0);
 }
 /* Carrossel: rola a barra para manter o app em foco visível, deixando o vizinho aparecendo. */
@@ -726,7 +779,7 @@ function renderWidgets() {
   el.innerHTML = cfg.widgets.filter(w => w.on).map(w => ({
     weather: '<button class="widget weather f" data-act="weather" id="weather"></button>',
     ambi: '<div class="widget" id="ambi"></div>',
-    news: `<button class="widget f" data-act="news"><div class="w-head"><span>Notícias</span><span class="pill">${cfg.newsCat === 'Todas' ? 'Simulado' : cfg.newsCat}</span></div><div id="newsList"></div></button>`
+    news: `<button class="widget f" data-act="news"><div class="w-head"><span>Notícias</span><span class="pill">${liveNews ? (cfg.newsCat === 'Esportes' ? 'ge' : 'g1') + (cfg.newsCat === 'Todas' ? '' : ' · ' + cfg.newsCat) : 'Simulado'}</span></div><div id="newsList"></div></button>`
   }[w.id])).join('');
   renderWeather(); renderAmbi(); renderNews();
 }
@@ -734,24 +787,47 @@ function renderWidgets() {
 /* ---------- Clima, Ambilight, notícias ---------- */
 const toMin = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
 const isNightAt = m => m < toMin(SUNRISE) || m >= toMin(SUNSET);
-const cityOff = () => (CITIES.find(c => c[0] === cfg.city) || [, 0])[1];
-const tempAt = h => Math.round(21 + cityOff() + 5 * Math.sin((h - 9) * Math.PI / 12));
+const tempAt = h => Math.round(21 + 5 * Math.sin((h - 9) * Math.PI / 12));   // só sem internet (simulado)
 const fmtT = t => (cfg.unit === 'F' ? Math.round(t * 9 / 5 + 32) : t) + '°';
 const kindAt = h => isNightAt(h * 60 + 30) ? 'moon' : ['partly', 'partly', 'cloud', 'sun'][h % 4];
-function renderWeather() {
+/* Previsão real do Open-Meteo (gratuito, sem chave). Sem internet, cai no simulado. */
+let wx = null;
+const kindOf = (code, day) => code <= 1 ? (day ? 'sun' : 'moon') : code === 2 ? (day ? 'partly' : 'moon') : code <= 48 ? 'cloud' : code >= 95 ? 'storm' : 'rain';
+const descOf = code => code === 0 ? 'Céu limpo' : code === 1 ? 'Predomínio de sol' : code === 2 ? 'Parcialmente nublado' : code === 3 ? 'Nublado'
+  : code <= 48 ? 'Neblina' : code <= 57 ? 'Garoa' : code <= 67 ? 'Chuva' : code <= 77 ? 'Neve' : code <= 82 ? 'Pancadas de chuva' : 'Tempestade';
+async function loadWeather() {
+  const c = CITIES.find(x => x[0] === cfg.city) || CITIES[0];
+  try {
+    const j = JSON.parse(await getText(`https://api.open-meteo.com/v1/forecast?latitude=${c[1]}&longitude=${c[2]}&current=temperature_2m,weather_code,is_day`
+      + '&hourly=temperature_2m,weather_code,is_day&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=2'));
+    wx = j; SUNRISE = j.daily.sunrise[0].slice(11, 16); SUNSET = j.daily.sunset[0].slice(11, 16);
+  } catch (e) { wx = null; }
+  renderWeather(); applyTheme();
+}
+function wxNow() {
+  if (wx) { const c = wx.current; return { t: Math.round(c.temperature_2m), k: kindOf(c.weather_code, c.is_day), desc: descOf(c.weather_code) }; }
+  const k = kindAt(new Date().getHours());
+  return { t: tempAt(new Date().getHours()), k, desc: { sun: 'Ensolarado', partly: 'Parcialmente nublado', cloud: 'Nublado', moon: 'Céu limpo' }[k] };
+}
+function wxHours(n) {
   const h = new Date().getHours();
-  const k = kindAt(h);
-  $('#wMini').innerHTML = `${W[k]}${fmtT(tempAt(h))}`;
+  if (!wx) return [...Array(n)].map((_, d) => { const hh = (h + d + 1) % 24; return { h: hh, t: tempAt(hh), k: kindAt(hh) }; });
+  const H = wx.hourly, i = Math.max(0, H.time.indexOf(wx.current.time.slice(0, 13) + ':00'));
+  return [...Array(n)].map((_, d) => ({ h: +H.time[i + d + 1].slice(11, 13), t: Math.round(H.temperature_2m[i + d + 1]), k: kindOf(H.weather_code[i + d + 1], H.is_day[i + d + 1]) }));
+}
+function renderWeather() {
+  const now = wxNow();
+  $('#wMini').innerHTML = `${W[now.k]}${fmtT(now.t)}`;
   const el = $('#weather'); if (!el) return;
   const temps = [...Array(24)].map((_, i) => tempAt(i));
-  const desc = { sun: 'Ensolarado', partly: 'Parcialmente nublado', cloud: 'Nublado', moon: 'Céu limpo' }[k];
-  const hours = [1, 2, 3, 4, 5, 6].map(d => { const hh = (h + d) % 24; return `<div><span>${hh}h</span>${W[kindAt(hh)]}<b>${fmtT(tempAt(hh))}</b></div>`; }).join('');
+  const [mx, mn] = wx ? [wx.daily.temperature_2m_max[0], wx.daily.temperature_2m_min[0]].map(Math.round) : [Math.max(...temps), Math.min(...temps)];
+  const hours = wxHours(6).map(x => `<div><span>${x.h}h</span>${W[x.k]}<b>${fmtT(x.t)}</b></div>`).join('');
   el.innerHTML = `
     <div class="w-now">
       <div class="w-head"><span>${cfg.city}</span></div>
-      <div class="w-temp">${W[k]}<b>${fmtT(tempAt(h))}</b></div>
-      <div class="w-desc">${desc}</div>
-      <div class="w-mm">Máx. ${fmtT(Math.max(...temps))}  Mín. ${fmtT(Math.min(...temps))}</div>
+      <div class="w-temp">${W[now.k]}<b>${fmtT(now.t)}</b></div>
+      <div class="w-desc">${now.desc}</div>
+      <div class="w-mm">Máx. ${fmtT(mx)}  Mín. ${fmtT(mn)}</div>
     </div>
     <div class="w-hours">
       <div class="hours">${hours}</div>
@@ -760,6 +836,13 @@ function renderWeather() {
 }
 function renderAmbi() {
   const el = $('#ambi'); if (!el) return;
+  if (TV) {   // o estado real só é acessível pelos menus da própria Philips
+    el.innerHTML = `
+      <div class="w-head"><span>Ambilight</span><span class="pill">Philips</span></div>
+      <div class="ambi-mid"><p class="ambi-note">Ligar, estilo, brilho e cores ficam nos ajustes oficiais da TV.</p></div>
+      <div class="modes"><button class="mode f" data-act="ambi:open:style">Estilo e ligar</button><button class="mode f" data-act="ambi:open:osd">Ajustes rápidos</button></div>`;
+    return;
+  }
   const m = state.ambi.mode, b = state.ambi.bright;
   const label = AMBI_MODES.find(x => x[0] === m)[2];
   el.innerHTML = `
@@ -774,13 +857,31 @@ function renderAmbi() {
     </div>
     <div class="modes">${AMBI_MODES.map(([id, l]) => `<button class="mode f ${id === m ? 'on' : ''}" data-act="ambi:mode:${id}">${l}</button>`).join('')}</div>`;
 }
-let newsIdx = 0, newsTimer;
-const newsList = () => cfg.newsCat === 'Todas' ? NEWS : NEWS.filter(n => n.cat === cfg.newsCat);
+let newsIdx = 0, newsTimer, liveNews = null;
+const agoText = d => { const m = Math.max(1, Math.round((Date.now() - d) / 60000)); return m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : `há ${Math.round(m / 1440)} d`; };
+async function loadNews() {
+  const cat = NEWS_FEEDS[cfg.newsCat] ? cfg.newsCat : 'Todas';
+  try {
+    const xml = new DOMParser().parseFromString(await getText(NEWS_FEEDS[cat]), 'text/xml');
+    const src = cat === 'Esportes' ? 'ge' : 'g1';
+    liveNews = [...xml.querySelectorAll('item')].slice(0, 24).map(it => ({
+      cat: cat === 'Todas' ? src : cat, c: NEWS_COLORS[cat] || '#c4170c',
+      d: Date.parse((it.querySelector('pubDate') || {}).textContent) || Date.now(), t: it.querySelector('title').textContent.trim()
+    }));
+    if (!liveNews.length) liveNews = null;
+  } catch (e) { liveNews = null; }
+  newsIdx = 0; renderWidgetsKeepFocus();
+}
+const newsList = () => {
+  if (liveNews) return liveNews;
+  const f = NEWS.filter(n => n.cat === cfg.newsCat);
+  return f.length ? f : NEWS;
+};
 function renderNews() {
   const el = $('#newsList'); if (!el) return;
   const list = newsList();
   el.innerHTML = list.slice(newsIdx, newsIdx + 2).concat(list.length > 2 && newsIdx + 2 > list.length ? list.slice(0, newsIdx + 2 - list.length) : [])
-    .map(n => `<div class="n"><span class="src" style="color:${n.c}">${n.cat} <em>· ${n.ago}</em></span><p>${n.t}</p></div>`).join('');
+    .map(n => `<div class="n"><span class="src" style="color:${n.c}">${esc(n.cat)} <em>· ${n.d ? agoText(n.d) : n.ago}</em></span><p>${esc(n.t)}</p></div>`).join('');
 }
 function restartNews() {
   clearInterval(newsTimer);
@@ -828,7 +929,8 @@ function applyGlow() {
   glow.style.opacity = m === 'off' ? 0 : (0.3 + 0.14 * state.ambi.bright);
 }
 function layout() {
-  const vw = innerWidth, vh = innerHeight, fr = state.frame;
+  // clientWidth/Height: no WebView da TV, innerWidth cresce junto com o palco de 1920 px.
+  const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight, fr = state.frame && !TV;
   const s = fr ? Math.min(vw * 0.84 / 1920, vh * 0.8 / 1080) : Math.min(vw / 1920, vh / 1080);
   const w = 1920 * s, h = 1080 * s, x = (vw - w) / 2, y = (vh - h) / 2 - (fr ? vh * 0.025 : 0);
   $('#stage').style.transform = `translate(${x}px, ${y}px) scale(${s})`;
@@ -936,7 +1038,7 @@ function renderPanel() {
   if (state.panel === 'custom') return renderSettings();
   if (state.panel === 'apps') {
     $('#overlay').innerHTML = `<div class="panel"><h2>Todos os apps</h2><p class="sub">Para escolher os apps da barra, use Personalizar → Apps</p><div class="grid">${
-      ALL_APPS.map(a => `<button class="gapp f" data-act="app:${a.id}"><span class="mt big">${tileHtml(a)}</span>${a.name}</button>`).join('')}</div></div>`;
+      ALL_APPS.filter(a => avail(a.id)).map(a => `<button class="gapp f" data-act="app:${a.id}"><span class="mt big">${tileHtml(a)}</span>${a.name}</button>`).join('')}</div></div>`;
     return;
   }
   const p = PANELS[state.panel]();
@@ -1045,7 +1147,7 @@ const SETTINGS = {
       { heading: 'Ordem e visibilidade' },
       ...cfg.widgets.map(w => moveRow('widgets', w.id, WIDGETS[w.id].label, WIDGETS[w.id].sub, { icon: WIDGETS[w.id].icon }, w.on)),
       { heading: 'Clima' },
-      cyc('city', 'globe', 'Cidade', 'Previsão simulada no protótipo'),
+      cyc('city', 'globe', 'Cidade', 'Previsão real do Open-Meteo'),
       cyc('unit', 'sun', 'Unidade', 'Temperatura em todos os lugares'),
       { heading: 'Notícias' },
       cyc('newsCat', 'news', 'Categoria', 'Quais manchetes aparecem'),
@@ -1060,7 +1162,7 @@ const SETTINGS = {
       { act: 'sc:sys', icon: 'sliders', label: 'Ajustes da TV', sub: 'Imagem, som e rede no menu original da Philips' },
       { act: 'reset', icon: 'reset', label: state.confirmReset ? 'Pressione de novo para confirmar' : 'Restaurar padrões', sub: 'Volta a ordem, a visibilidade e as opções ao original', danger: true },
       { heading: 'Sobre' },
-      { note: 'TV Launcher · protótipo v0.2 · conteúdo, clima, notícias e dispositivos simulados.' }
+      { note: `TV Launcher v0.3 · clima: Open-Meteo · notícias: g1 e ge · destaques: ${TMDB_KEY ? 'TMDB' : 'sem chave do TMDB (veja o README)'}.` }
     ]
   })
 };
@@ -1145,6 +1247,8 @@ function dropMove() {
 /* ---------- App aberto (simulação) ---------- */
 function openApp(app, title) {
   if (state.panel) closePanel();
+  if (!app) { toast('Esse app não está instalado na TV'); return; }
+  if (TV) { if (!TV.openApp(app.id)) toast(`${app.name} não está instalado na TV`); return; }
   state.appOpen = app.id;
   $('#appview').innerHTML = `<div class="av-logo">${tileHtml(app)}</div>
     <div class="av-txt">${title ? `<b>${title}</b>` : `<b>${app.name}</b>`}
@@ -1168,7 +1272,7 @@ function showOsd(hold) {
   const o = $('#osd'), n = new Date(), h = n.getHours();
   const date = n.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' });
   o.innerHTML = `<div class="osd-clock"><span class="osd-time">${clockText(n)}</span>${cfg.osdDate ? `<small>${date}</small>` : ''}</div>`
-    + (cfg.osdTemp ? `<span class="osd-sep"></span><div class="osd-w">${W[kindAt(h)]}<span><b>${fmtT(tempAt(h))}</b>${cfg.osdCity ? `<small>${cfg.city}</small>` : ''}</span></div>` : '')
+    + (cfg.osdTemp ? `<span class="osd-sep"></span><div class="osd-w">${W[wxNow().k]}<span><b>${fmtT(wxNow().t)}</b>${cfg.osdCity ? `<small>${cfg.city}</small>` : ''}</span></div>` : '')
     + '<i class="osd-prog"></i>';
   o.classList.toggle('top', cfg.osdPos === 'superior');
   o.classList.add('show');
@@ -1203,7 +1307,7 @@ function toast(msg) {
 function act(a) {
   const [k, v, w] = a.split(':');
   switch (k) {
-    case 'open': { const it = CONTENT[state.tab][+v]; openApp(ALL_APPS.find(x => x.name === it.app), it.t); break; }
+    case 'open': { const it = CONTENT[state.tab][+v]; openApp(it.appId ? appById(it.appId) : ALL_APPS.find(x => x.name === it.app), it.t); break; }
     case 'tab': focusEl($('#hero .f') || firstHome()); break;
     case 'app': openApp(appById(v)); break;
     case 'osd':
@@ -1211,23 +1315,27 @@ function act(a) {
       else toast('Na TV, aqui você aperta o botão do controle que quer usar');
       break;
     case 'input': {
-      state.input = v; save('input'); renderInputs(); refocus(a);
       const it = inputInfo(v);
-      toast('Entrada: ' + (it.sub ? `${it.label} (${it.sub})` : it.label));
+      if (TV && !TV.openInput(v)) { toast('Não consegui abrir ' + it.label); break; }
+      state.input = v; save('input'); renderInputs(); refocus(a);
+      if (!TV) toast('Entrada: ' + (it.sub ? `${it.label} (${it.sub})` : it.label));
       break;
     }
     case 'sc':
-      if (v === 'ambi') { const b = document.querySelector(`[data-act="ambi:mode:${state.ambi.mode}"]`); b ? focusEl(b) : toast('Ative o widget Ambilight em Personalizar → Widgets'); }
+      if (v === 'ambi' && TV) TV.openAmbilight('style');
+      else if (v === 'ambi') { const b = document.querySelector(`[data-act="ambi:mode:${state.ambi.mode}"]`); b ? focusEl(b) : toast('Ative o widget Ambilight em Personalizar → Widgets'); }
+      else if (TV && v !== 'apps') { if (state.panel) closePanel(); TV.openSettings(v); }
       else if (v === 'sys') toast('Abriria o menu de ajustes original da Philips');
       else openPanel(v);
       break;
     case 'hdr':
-      if (v === 'bt') openPanel('bt');
+      if (v === 'bt') TV ? TV.openSettings('bt') : openPanel('bt');
       if (v === 'inputs') { const b = document.querySelector(`[data-act="input:${state.input}"]`) || $('#inputs .f'); b ? focusEl(b) : toast('As entradas estão ocultas em Personalizar'); }
       if (v === 'theme') cycleTheme();
       if (v === 'settings') openPanel('custom');
       break;
     case 'ambi':
+      if (v === 'open') { TV.openAmbilight(w); break; }
       if (v === 'mode') state.ambi.mode = w;
       else state.ambi.bright = Math.min(5, Math.max(1, state.ambi.bright + (w === '+' ? 1 : -1)));
       save('ambi'); renderAmbi(); applyGlow(); refocus(a);
@@ -1262,7 +1370,8 @@ function act(a) {
       if (v === 'iname') cfg.inputs[w].name = nextOf(NAME_PRESETS, cfg.inputs[w].name);
       else cfg[v] = nextOf(CYCLES[v].map(o => o[0]), cfg[v]);
       if (v === 'startTab') state.tab = cfg.startTab;
-      if (v === 'newsCat') newsIdx = 0;
+      if (v === 'newsCat') { newsIdx = 0; loadNews(); }
+      if (v === 'city') loadWeather();
       afterCfg(); if (v === 'newsSpeed') restartNews();
       refreshPanel(); refocus(a);
       break;
@@ -1345,6 +1454,7 @@ document.addEventListener('focusin', e => {
   if (el.classList.contains('art')) { videoColors = CONTENT[state.tab][+el.dataset.i].c; applyGlow(); }
 });
 document.addEventListener('mousemove', e => {
+  if (TV) return;   // o WebView da TV dispara movimentos de mouse falsos após redesenhar, roubando o foco
   const el = e.target.closest('.f');
   if (!el || el === document.activeElement || state.moving) return;
   if (state.panel && !$('#overlay').contains(el)) return;
@@ -1372,10 +1482,92 @@ function tick() {
   if (state.theme === 'auto') applyTheme();
 }
 setInterval(tick, 15000);
-setInterval(renderWeather, 10 * 60000);
+setInterval(loadWeather, 20 * 60000);
+setInterval(loadNews, 15 * 60000);
+setInterval(loadHero, 3 * 3600e3);
+
+/* Redesenha sem perder o item em foco (dados novos chegando ou volta de outro app). */
+function renderHomeKeepFocus() {
+  const a = document.activeElement && document.activeElement.dataset.act;
+  renderHome();
+  if (state.panel) return;
+  focusEl((a && document.querySelector(`#content [data-act="${CSS.escape(a)}"]`)) || firstHome());
+}
+function renderWidgetsKeepFocus() {
+  const a = document.activeElement && document.activeElement.dataset.act;
+  renderWidgets();
+  if (!state.panel && a) refocus(a);
+}
+/* Apps instalados ou removidos enquanto o launcher estava em segundo plano. */
+function syncApps() {
+  if (!TV) return;
+  ALL_APPS = realApps();
+  const ids = ALL_APPS.map(a => a.id);
+  cfg.apps = cfg.apps.filter(a => ids.includes(a.id));
+  ids.forEach(id => { if (!cfg.apps.some(a => a.id === id)) cfg.apps.push({ id, on: false }); });
+  saveCfg();
+}
+
+/* ---------- Destaques reais (TMDB) ----------
+   O que está em alta na semana, só dos serviços que a TV tem e disponível no Brasil.
+   Lógica adaptada do Free My TV (MIT): https://github.com/simbasjungles/free-my-tv */
+const TMDB_KEY = ((TV && TV.tmdbKey()) || store.get('tmdbKey', '') || '').trim();
+const SERVICES = [['netflix', 'com.netflix.ninja', 'Netflix'], ['prime video', 'com.amazon.amazonvideo.livingroom', 'Prime Video'],
+  ['disney', 'com.disney.disneyplus', 'Disney+'], ['globoplay', 'com.globo.globotv', 'Globoplay'], ['max', 'com.wbd.stream', 'Max'],
+  ['apple tv', 'com.apple.atve.androidtv.appletv', 'Apple TV'], ['crunchyroll', 'com.crunchyroll.crunchyroid', 'Crunchyroll'], ['paramount', 'com.cbs.ott', 'Paramount+']];
+const GENRES_PT = { 'Action & Adventure': 'Ação e Aventura', 'Sci-Fi & Fantasy': 'Ficção científica e Fantasia', 'War & Politics': 'Guerra e Política', Kids: 'Infantil', Soap: 'Novela' };
+const serviceOf = name => { const n = name.toLowerCase(); return SERVICES.find(s => s[0] === 'max' ? /\bmax\b/.test(n) : n.includes(s[0])); };
+function tmdb(path) {
+  const bearer = TMDB_KEY.startsWith('eyJ');   // token de leitura (v4) ou chave da API (v3)
+  const url = 'https://api.themoviedb.org/3' + path + (bearer ? '' : (path.includes('?') ? '&' : '?') + 'api_key=' + encodeURIComponent(TMDB_KEY));
+  return getText(url, bearer ? TMDB_KEY : null).then(JSON.parse);
+}
+async function tmdbPick(o, kind) {
+  const d = await tmdb(`/${kind}/${o.id}?language=pt-BR&append_to_response=watch/providers`);
+  const flat = ((((d['watch/providers'] || {}).results || {}).BR) || {}).flatrate || [];
+  const svc = flat.map(f => serviceOf(f.provider_name)).find(x => x && avail(x[1]));
+  if (!svc) return null;
+  const parts = [kind === 'tv' ? 'Série' : 'Filme'];
+  if (d.genres && d.genres[0]) parts.push(GENRES_PT[d.genres[0].name] || d.genres[0].name);
+  if (kind === 'movie' && d.runtime) parts.push(d.runtime >= 60 ? `${Math.floor(d.runtime / 60)}h${String(d.runtime % 60).padStart(2, '0')}` : d.runtime + ' min');
+  if (kind === 'tv' && d.number_of_seasons) parts.push(d.number_of_seasons === 1 ? '1 temporada' : d.number_of_seasons + ' temporadas');
+  const img = 'https://image.tmdb.org/t/p/';
+  return { t: d.title || d.name, meta: parts.join(' · '), app: svc[2], appId: svc[1], c: ['#101820', '#2a3a55', '#e0b070'],
+    back: d.backdrop_path && img + 'w1280' + d.backdrop_path, poster: d.poster_path && img + 'w500' + d.poster_path };
+}
+async function tmdbTop(kind) {
+  const hot = (await tmdb(`/trending/${kind}/week?language=pt-BR`)).results.filter(o => o.backdrop_path && o.media_type !== 'person');
+  const out = [];
+  for (const o of hot.slice(0, 20)) {
+    if (out.length === 3) break;
+    try { const p = await tmdbPick(o, o.media_type || kind); if (p) out.push(p); } catch (e) {}
+  }
+  return out;
+}
+async function loadHero() {
+  if (!TMDB_KEY) return;
+  const cached = store.get('hero', null);
+  let data = cached && cached.v === 1 && Date.now() - cached.at < 3 * 3600e3 ? cached.data : null;
+  if (!data) {
+    try {
+      const [explorar, filmes, series] = await Promise.all([tmdbTop('all'), tmdbTop('movie'), tmdbTop('tv')]);
+      if (explorar.length < 3 || filmes.length < 3 || series.length < 3) return;
+      data = { explorar, filmes, series };
+      store.set('hero', { v: 1, at: Date.now(), data });
+    } catch (e) { return; }
+  }
+  Object.assign(CONTENT, data);
+  heroReal = true;
+  renderHomeKeepFocus();
+}
+
+/* Chamados pelo app Android: Home com o launcher já aberto, e volta de outro app. */
+window.tvHome = () => { if (state.moving) dropMove(); if (state.panel) closePanel(); renderHome(); focusEl(firstHome()); };
+window.tvResume = () => { if (!state.panel) { syncApps(); renderHomeKeepFocus(); } };
 
 applyLook(); applyTheme(); renderHome(); applyGlow(); layout(); restartNews();
 focusEl(firstHome());
+loadWeather(); loadNews(); loadHero();
 </script>
 </body>
 </html>
