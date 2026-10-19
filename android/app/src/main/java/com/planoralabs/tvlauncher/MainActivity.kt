@@ -297,21 +297,22 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun setOsd(json: String) { prefs.edit().putString("osd_cfg", json).apply() }
 
-        /** Começa ou cancela a escolha do botão: a próxima tecla apertada vira o gatilho. */
+        /** Começa (limpando a lista) ou encerra a escuta de botões da janela "Adicionar botões". */
         @JavascriptInterface
-        fun osdCapture(start: Boolean) { prefs.edit().putBoolean("osd_capturing", start).apply() }
+        fun osdCapture(start: Boolean) {
+            val e = prefs.edit().putBoolean("osd_capturing", start)
+            if (start) e.putString("osd_seen", "").putLong("osd_cap_since", System.currentTimeMillis())
+            e.apply()
+        }
 
-        /** {keys: [{code, name}], capturing, last: {code, name, ok, at}}. name é o KEYCODE sem o prefixo. */
+        /** {keys: [{code, name}], capturing, seen: [{code, name, ok}]}. name é o KEYCODE sem o prefixo. */
         @JavascriptInterface
         fun osdKeys(): String {
-            val name = { c: Int -> KeyEvent.keyCodeToString(c).removePrefix("KEYCODE_") }
-            val keys = JSONArray()
-            ClockOverlayService.keys(prefs).forEach { keys.put(JSONObject().put("code", it).put("name", name(it))) }
-            val o = JSONObject().put("keys", keys).put("capturing", prefs.getBoolean("osd_capturing", false))
-            val last = prefs.getInt("osd_last", 0)
-            if (last != 0) o.put("last", JSONObject().put("code", last).put("name", name(last))
-                .put("ok", prefs.getBoolean("osd_last_ok", false)).put("at", prefs.getLong("osd_last_at", 0)))
-            return o.toString()
+            val key = { c: Int -> JSONObject().put("code", c).put("name", KeyEvent.keyCodeToString(c).removePrefix("KEYCODE_"))
+                .put("ok", c !in ClockOverlayService.RESERVED) }
+            val keys = JSONArray().also { a -> ClockOverlayService.keys(prefs).forEach { a.put(key(it)) } }
+            val seen = JSONArray().also { a -> ClockOverlayService.seen(prefs).forEach { a.put(key(it)) } }
+            return JSONObject().put("keys", keys).put("seen", seen).put("capturing", prefs.getBoolean("osd_capturing", false)).toString()
         }
 
         /** Troca a lista de botões do relógio (códigos separados por vírgula). */

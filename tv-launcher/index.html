@@ -311,6 +311,9 @@ button.widget:focus { transform: scale(1.035); background: var(--tile-focus); bo
 .wxp-days svg { width: 46px; height: 46px; margin: 8px 0; color: var(--text2); }
 .wxp-days small { display: block; font-size: 17px; color: #4FA3FF; margin-top: 4px; }
 .wxp-days em { font-style: normal; color: var(--text2); margin-left: 8px; }
+.listen { display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 600; color: var(--accent); margin: 4px 0 16px; }
+.listen i { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); animation: pulse .8s ease-in-out infinite alternate; }
+.kp-btns { display: flex; gap: 14px; margin-top: 22px; }
 .inp { width: 100%; font: inherit; font-size: 28px; padding: 18px 24px; border-radius: 20px; border: 2px solid var(--stroke); background: var(--tile); color: var(--text); margin: 6px 0 18px; }
 .inp:focus { border-color: var(--accent); background: var(--tile-focus); }
 
@@ -1177,7 +1180,8 @@ function move(dir) {
   focusEl(best);
 }
 function back() {
-  if (state.moving) dropMove();
+  if (state.panel === 'keys') closeKeyPicker(false);
+  else if (state.moving) dropMove();
   else if (state.panel) closePanel();
   else if (scrollY > 0) focusEl(firstHome());
 }
@@ -1230,6 +1234,7 @@ function renderPanel() {
   if (state.panel === 'custom') return renderSettings();
   if (state.panel === 'weather') return renderWeatherFull();
   if (state.panel === 'city') return renderCitySearch();
+  if (state.panel === 'keys') return renderKeyPicker();
   if (state.panel === 'apps') {
     $('#overlay').innerHTML = `<div class="panel"><h2>Todos os apps</h2><p class="sub">Para escolher os apps da barra, use Personalizar → Apps</p><div class="grid">${
       ALL_APPS.filter(a => avail(a.id)).map(a => `<button class="gapp f" data-act="app:${a.id}"><span class="mt big">${tileHtml(a)}</span>${a.name}</button>`).join('')}</div></div>`;
@@ -1244,7 +1249,7 @@ function openPanel(name) {
   state.panel = name;
   renderPanel();
   $('#overlay').classList.add('open');
-  focusEl($('#overlay .f'));
+  focusEl((name === 'custom' && $(`#overlay [data-act="cat:${state.cat}"]`)) || $('#overlay .f'));
 }
 function closePanel() {
   state.panel = null; state.moving = null; state.confirmReset = false;
@@ -1466,45 +1471,55 @@ const KEY_NAMES = { PROG_RED: 'Vermelho', PROG_GREEN: 'Verde', PROG_YELLOW: 'Ama
   TV_INPUT: 'Fonte', SETTINGS: 'Ajustes', MENU: 'Menu', BOOKMARK: 'Favoritos', MEDIA_RECORD: 'Gravar', DVR: 'Gravações', TV: 'TV' };
 const keyName = k => KEY_NAMES[k.name] || k.name;
 const osdKeys = () => { try { return JSON.parse(TV.osdKeys()); } catch (e) { return { keys: [], capturing: false }; } };
-const COLOR_KEYS = [183, 184, 185, 186];   // KEYCODE_PROG_RED, GREEN, YELLOW, BLUE
 function osdKeyRows() {
   if (!TV) return [{ act: 'osd:key', icon: 'remote', label: 'Definir botão', sub: 'Na TV, este item espera você apertar o botão desejado', value: 'H (protótipo)' }];
-  const k = osdKeys(), last = k.last && Date.now() - k.last.at < 20000 ? k.last : null;
+  const k = osdKeys();
   return [
     ...k.keys.map(x => ({ act: 'osdk:del:' + x.code, icon: 'remote', label: keyName(x), sub: 'Mostra o relógio · Enter remove', end: 'Remover' })),
     ...(k.keys.length ? [] : [{ note: 'Nenhum botão escolhido ainda.' }]),
-    { act: 'osd:key', icon: 'search', label: k.capturing ? 'Aperte os botões agora…' : 'Adicionar botões',
-      sub: k.capturing ? (last ? `Último: ${keyName(last)} · ${last.ok ? 'adicionado' : 'não pode ser usado'} · Voltar termina` : 'Aperte um ou mais botões do controle · Voltar termina')
-        : 'Identifica e adiciona cada botão que você apertar', end: k.capturing ? 'Ouvindo' : '', on: k.capturing },
-    { act: 'osdk:colors', icon: 'palette', label: 'Usar os 4 botões coloridos', sub: 'Vermelho, verde, amarelo e azul' }
+    { act: 'osd:key', icon: 'search', label: 'Adicionar botões', sub: 'Abre uma janela que identifica cada botão que você apertar' }
   ];
 }
-/* Escolha de botões: o serviço identifica cada tecla; aqui só mostramos o que chegou. Setas e OK seguem navegando. */
-let captureT;
-function captureKey() {
+/* Janela "Adicionar botões": o serviço ouve o controle e anota cada botão; Voltar encerra a escuta;
+   depois dá para tirar botões da lista e confirmar ou cancelar. Nada é salvo antes de "Confirmar". */
+const keyPick = { listening: false, list: [], removed: new Set(), timer: null };
+function openKeyPicker() {
   if (!TV.serviceOn()) { toast('O serviço do TV Launcher está desligado'); return; }
+  Object.assign(keyPick, { listening: true, list: [], removed: new Set() });
   TV.osdCapture(true);
-  let seen = (osdKeys().last || {}).at || 0, idleSince = Date.now();
-  const redraw = () => {
-    if (state.panel !== 'custom' || state.cat !== 'relogio') return;
-    const a = document.activeElement && document.activeElement.dataset.act;
-    refreshPanel(); if (a) refocus(a);
-  };
-  redraw();
-  clearInterval(captureT);
-  captureT = setInterval(() => {
+  closePanel(); openPanel('keys');
+  clearInterval(keyPick.timer);
+  keyPick.timer = setInterval(() => {
     const k = osdKeys();
-    if (k.last && k.last.at !== seen) {
-      seen = k.last.at; idleSince = Date.now();
-      toast(k.last.ok ? `${keyName(k.last)} adicionado` : `${keyName(k.last)} não pode ser usado`);
-      redraw();
-    }
-    if (k.capturing && Date.now() - idleSince < 15000) return;
-    clearInterval(captureT);
-    if (k.capturing) TV.osdCapture(false);
-    redraw();
-    toast(k.keys.length ? 'Botões do relógio: ' + k.keys.map(keyName).join(', ') : 'Nenhum botão definido');
-  }, 300);
+    const list = k.seen.filter(x => !keyPick.removed.has(x.code));
+    const changed = JSON.stringify(list) !== JSON.stringify(keyPick.list) || keyPick.listening !== k.capturing;
+    keyPick.list = list; keyPick.listening = k.capturing;
+    if (!k.capturing) clearInterval(keyPick.timer);
+    if (changed && state.panel === 'keys') { renderPanel(); if (!keyPick.listening) focusEl($('#overlay .row[data-act^="kp:del"]') || $('[data-act="kp:ok"]')); }
+  }, 250);
+}
+function renderKeyPicker() {
+  const { listening, list } = keyPick;
+  const rows = list.map(x => x.ok
+    ? { act: listening ? 'noop' : 'kp:del:' + x.code, icon: 'remote', label: keyName(x), sub: 'Vai mostrar o relógio', end: listening ? '' : 'Remover' }
+    : { act: 'noop', icon: 'remote', label: keyName(x), sub: 'Botão não permitido', danger: true });
+  $('#overlay').innerHTML = `<div class="panel"><h2>Adicionar botões</h2>
+    <p class="sub">${listening ? 'Aperte os botões do controle que vão mostrar o relógio. Aperte Voltar quando terminar.' : 'Selecione um botão para tirá-lo da lista. Depois confirme.'}</p>
+    ${listening ? '<div class="listen"><i></i>Ouvindo o controle…</div><p class="note">Volume, Home, energia e o botão Ambilight não aparecem aqui: a TV cuida deles antes de qualquer app.</p>' : ''}
+    ${rows.length ? rows.map(rowHtml).join('') : `<p class="note">${listening ? 'Nenhum botão apertado ainda.' : 'Nenhum botão escolhido.'}</p>`}
+    ${listening ? '' : '<div class="kp-btns"><button class="mode f on" data-act="kp:ok">Confirmar</button><button class="mode f" data-act="kp:again">Ouvir de novo</button><button class="mode f" data-act="kp:cancel">Cancelar</button></div>'}
+  </div>`;
+}
+function closeKeyPicker(save) {
+  clearInterval(keyPick.timer);
+  TV.osdCapture(false);
+  if (save) {
+    const add = keyPick.list.filter(x => x.ok).map(x => x.code);
+    const all = [...new Set([...osdKeys().keys.map(x => x.code), ...add])];
+    TV.osdSetKeys(all.join(','));
+    toast(add.length ? 'Botões do relógio: ' + osdKeys().keys.map(keyName).join(', ') : 'Nenhum botão novo');
+  }
+  closePanel(); state.cat = 'relogio'; openPanel('custom'); refocus('osd:key');
 }
 function syncOsd() {
   if (!TV) return;
@@ -1561,17 +1576,18 @@ function act(a) {
     case 'heromore': moreHero(); break;
     case 'tab': focusEl($('#hero .f') || firstHome()); break;
     case 'app': openApp(appById(v)); break;
-    case 'osdk': {
-      const cur = osdKeys().keys.map(x => x.code);
-      const next = v === 'colors' ? [...new Set([...cur, ...COLOR_KEYS])] : cur.filter(c => c !== +w);
-      TV.osdSetKeys(next.join(','));
-      toast(v === 'colors' ? 'Botões coloridos adicionados' : 'Botão removido');
-      refreshPanel(); refocus(v === 'colors' ? a : 'osd:key');
+    case 'osdk':
+      TV.osdSetKeys(osdKeys().keys.map(x => x.code).filter(c => c !== +w).join(','));
+      toast('Botão removido'); refreshPanel(); refocus('osd:key');
       break;
-    }
+    case 'kp':
+      if (v === 'del') { keyPick.removed.add(+w); keyPick.list = keyPick.list.filter(x => x.code !== +w); renderPanel(); focusEl($('#overlay .row[data-act^="kp:del"]') || $('[data-act="kp:ok"]')); }
+      else if (v === 'again') { keyPick.removed = new Set(); openKeyPicker(); }
+      else closeKeyPicker(v === 'ok');
+      break;
     case 'osd':
       if (v === 'test') TV ? (TV.osdTest() || toast('O serviço do TV Launcher está desligado')) : showOsd();
-      else TV ? captureKey() : toast('Na TV, aqui você aperta o botão do controle que quer usar');
+      else TV ? openKeyPicker() : toast('Na TV, aqui você aperta o botão do controle que quer usar');
       break;
     case 'input': {
       const it = inputInfo(v);
