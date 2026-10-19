@@ -327,11 +327,15 @@ button.widget:focus { transform: scale(1.035); background: var(--tile-focus); bo
 .cat svg { width: 28px; height: 28px; flex: none; }
 .cat.active { color: var(--text); background: var(--tile); }
 .cat:focus { background: var(--tile-focus); color: var(--text); transform: scale(1.03); box-shadow: 0 16px 30px -14px var(--shadow-strong); }
-.main { display: flex; flex-direction: column; min-height: 0; padding: 48px 44px 0; }
+.main { position: relative; display: flex; flex-direction: column; min-height: 0; padding: 48px 44px 0; }
 .main h2 { margin-left: 24px; font-size: 40px; }
 .main p.sub { margin: 6px 0 16px 24px; }
-.pscroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; position: relative; padding: 10px 18px 48px; margin: 0 -18px; scroll-behavior: smooth; }
+.pscroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; position: relative; padding: 10px 18px 48px; margin: 0 -18px; }
 .pscroll::-webkit-scrollbar { display: none; }
+/* Barra de rolagem: aparece só durante a rolagem */
+.sbar { position: absolute; right: 14px; width: 6px; border-radius: 3px; background: var(--tile); opacity: 0; transition: opacity .4s; pointer-events: none; }
+.sbar.active { opacity: 1; }
+.sbar i { position: absolute; left: 0; right: 0; border-radius: 3px; background: var(--text2); }
 
 /* App aberto (simulação) */
 #appview {
@@ -856,7 +860,11 @@ function ensureVisible(el) {
 }
 
 /* ---------- Navegação por controle remoto ---------- */
-function focusEl(el) { if (el) el.focus({ preventScroll: true }); }
+function focusEl(el) {
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  if (el.closest('.pscroll')) panelScroll(el);
+}
 function refocus(act) { focusEl(document.querySelector(`[data-act="${CSS.escape(act)}"]`)); }
 const firstHome = () => $('#blocks .f') || $('#header .f');
 function candidates() {
@@ -1069,17 +1077,55 @@ function renderSettingsMain(resetScroll) {
   const prev = main.querySelector('.pscroll');
   const top = prev && !resetScroll ? prev.scrollTop : 0;
   const c = SETTINGS[state.cat]();
-  main.innerHTML = `<h2>${c.title}</h2><p class="sub">${c.sub}</p><div class="pscroll">${c.rows.map(rowHtml).join('')}</div>`;
+  main.innerHTML = `<h2>${c.title}</h2><p class="sub">${c.sub}</p><div class="pscroll">${c.rows.map(rowHtml).join('')}</div><div class="sbar"><i></i></div>`;
   const sc = main.querySelector('.pscroll');
-  sc.style.scrollBehavior = 'auto'; sc.scrollTop = top; sc.style.scrollBehavior = '';
+  sc.scrollTop = top;
+  sc.addEventListener('scroll', () => updateSbar(sc, true));
+  updateSbar(sc, false);
 }
 function refreshPanel() { if (state.panel === 'custom') renderSettingsMain(); else renderPanel(); }
+let sbarT;
+function updateSbar(sc, flash) {
+  const bar = sc.parentNode.querySelector('.sbar'); if (!bar) return;
+  const max = sc.scrollHeight - sc.clientHeight;
+  bar.style.display = max > 2 ? '' : 'none';
+  if (max <= 2) return;
+  const trackTop = sc.offsetTop + 16, trackH = sc.clientHeight - 64;
+  const thumbH = Math.max(60, trackH * sc.clientHeight / sc.scrollHeight);
+  bar.style.top = trackTop + 'px'; bar.style.height = trackH + 'px';
+  const th = bar.firstChild;
+  th.style.height = thumbH + 'px';
+  th.style.top = (trackH - thumbH) * Math.min(1, sc.scrollTop / max) + 'px';
+  if (flash) {
+    bar.classList.add('active');
+    clearTimeout(sbarT); sbarT = setTimeout(() => bar.classList.remove('active'), 900);
+  }
+}
+/* Rolagem animada própria, por temporizador: a rolagem suave do CSS e o requestAnimationFrame
+   podem não avançar em alguns navegadores e webviews. */
+let scrollAnim;
+function animateScroll(sc, to) {
+  to = Math.max(0, Math.min(to, sc.scrollHeight - sc.clientHeight));
+  clearTimeout(scrollAnim);
+  const from = sc.scrollTop, start = performance.now(), dur = cfg.motion === 'reduzidas' ? 80 : 260;
+  const step = () => {
+    const k = Math.min(1, (performance.now() - start) / dur), e = 1 - Math.pow(1 - k, 3);
+    sc.scrollTop = from + (to - from) * e;
+    if (k < 1) scrollAnim = setTimeout(step, 16);
+  };
+  step();
+}
 function panelScroll(el) {
   const sc = el.closest('.pscroll'); if (!sc) return;
   const box = el.closest('.rw') || el;
   const t = box.offsetTop, b = t + box.offsetHeight;
-  if (t < sc.scrollTop + 16) sc.scrollTop = t - 60;
-  else if (b > sc.scrollTop + sc.clientHeight - 16) sc.scrollTop = b - sc.clientHeight + 40;
+  // Primeiro/último item: rola até a ponta, para mostrar títulos e o fim da lista.
+  const items = sc.querySelectorAll('.f'), boxOf = f => f.closest('.rw') || f;
+  const first = box === boxOf(items[0]), last = box === boxOf(items[items.length - 1]);
+  if (first) animateScroll(sc, 0);
+  else if (last) animateScroll(sc, sc.scrollHeight);
+  else if (t < sc.scrollTop + 16) animateScroll(sc, t - 60);
+  else if (b > sc.scrollTop + sc.clientHeight - 16) animateScroll(sc, b - sc.clientHeight + 40);
 }
 function afterCfg() { saveCfg(); applyLook(); renderHome(); }
 function moveItem(d) {
