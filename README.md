@@ -17,7 +17,10 @@ Launcher personalizado para Android TV / Google TV (Philips Ambilight), no estil
 | Notícias | RSS do g1 e do ge, por categoria |
 | Destaques | [TMDB](https://www.themoviedb.org): 12 em alta na semana por aba, só dos serviços instalados e disponíveis no Brasil, com "Mais títulos" no fim. Ao selecionar, abre direto no título dentro do app (link do [JustWatch](https://www.justwatch.com), conferido pelo ID do TMDB) |
 | Ambilight | Ligar/desligar, estilo, brilho e saturação na tela inicial, aplicados nos menus oficiais da Philips |
-| Relógio flutuante | Serviço próprio que mostra hora e clima por cima de qualquer app, no botão do controle escolhido |
+| Relógio flutuante | Serviço próprio que mostra hora e clima por cima de qualquer app, nos botões do controle escolhidos em Personalizar → Relógio flutuante → Adicionar botões |
+| Ao ligar a TV | A Philips abre a TV ao vivo ou a última fonte; o serviço volta para a tela inicial (Personalizar → Sistema → Ligar na tela inicial) |
+
+Atalhos de controle: segurar OK num app da barra permite mudar a posição dele (← → e OK para soltar); em Todos os apps, segurar OK abre o menu do app (desinstalar e informações).
 
 O Personalizar e o relógio flutuante continuam sendo deste projeto. A lógica dos destaques foi adaptada do [Free My TV](https://github.com/simbasjungles/free-my-tv) (MIT).
 

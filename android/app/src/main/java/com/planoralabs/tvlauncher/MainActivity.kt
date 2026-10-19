@@ -52,6 +52,8 @@ class MainActivity : Activity() {
             // Respeita o <meta viewport> da página; sem isso a página se acha com 1920 px e aparece ampliada.
             settings.useWideViewPort = true
             settings.loadWithOverviewMode = false
+            // Desenha também o que está um pouco fora da tela: rolagens e carrosséis sem "buraco" ao andar.
+            settings.offscreenPreRaster = true
             isFocusable = true
             isFocusableInTouchMode = true
             webViewClient = WebViewClient()
@@ -171,8 +173,9 @@ class MainActivity : Activity() {
                 .filter { it.activityInfo.packageName != packageName }
                 .forEach {
                     val label = it.loadLabel(packageManager).toString()
+                    val system = it.activityInfo.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM != 0
                     arr.put(JSONObject().put("id", it.activityInfo.packageName).put("name", label)
-                        .put("banner", banner(it.activityInfo, label)))
+                        .put("banner", banner(it.activityInfo, label)).put("system", system))
                 }
             return arr.toString()
         }
@@ -333,6 +336,14 @@ class MainActivity : Activity() {
             s.ambilight(cmd) { r -> js("window.tvAmbiDone && tvAmbiDone($r)") }
             return true
         }
+
+        /** Tela do sistema para desinstalar (pede confirmação). */
+        @JavascriptInterface
+        fun uninstall(pkg: String): Boolean = launch(Intent(Intent.ACTION_DELETE, android.net.Uri.parse("package:$pkg")))
+
+        @JavascriptInterface
+        fun appInfo(pkg: String): Boolean =
+            launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$pkg")))
 
         @JavascriptInterface
         fun tmdbKey(): String = BuildConfig.TMDB_KEY

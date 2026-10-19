@@ -40,9 +40,42 @@ class ClockOverlayService : AccessibilityService() {
     override fun onServiceConnected() {
         instance = this
         prefs.edit().putBoolean("osd_capturing", false).apply()   // nunca reinicia preso no modo de escolha
+        registerReceiver(screenOn, android.content.IntentFilter(Intent.ACTION_SCREEN_ON))
+        if (android.os.SystemClock.elapsedRealtime() < 5 * 60_000) homeAfterPowerOn()   // TV acabou de ligar (boot completo)
     }
-    override fun onDestroy() { hideBar(); instance = null; super.onDestroy() }
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) = Unit
+
+    // MARK: - Ligar na tela inicial
+
+    /** Pacote da janela em primeiro plano (pelos eventos de janela; só o nome do pacote). */
+    @Volatile private var topPackage: String? = null
+
+    private val screenOn = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: android.content.Context, i: Intent) = homeAfterPowerOn()
+    }
+
+    /**
+     * Ao ligar, a Philips abre a TV ao vivo / última fonte (ex.: HDMI 1). Se a opção estiver ligada e quem estiver
+     * na frente for o app da TV, volta para a tela inicial. Duas tentativas, porque a TV abre o app dela com atraso.
+     */
+    private fun homeAfterPowerOn() {
+        if (!osd.optBoolean("homeOnWake", true)) return
+        val go = Runnable {
+            val top = topPackage
+            if (top == null || top == "com.mediatek.wwtv.tvcenter" || top == "com.mediatek.tvinput") {
+                startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+        }
+        main.postDelayed(go, 2500)
+        main.postDelayed(go, 7000)
+    }
+    override fun onDestroy() {
+        hideBar(); instance = null
+        try { unregisterReceiver(screenOn) } catch (e: Exception) { }
+        super.onDestroy()
+    }
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) event.packageName?.let { topPackage = it.toString() }
+    }
     override fun onInterrupt() = hideBar()
 
     // MARK: - Relógio flutuante
@@ -130,22 +163,22 @@ class ClockOverlayService : AccessibilityService() {
         val o = osd
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(26), dp(14), dp(30), dp(14))
-            background = GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(0xE0141519.toInt()); setStroke(1, 0x33FFFFFF) }
+            setPadding(dp(20), dp(10), dp(22), dp(10))
+            background = GradientDrawable().apply { cornerRadius = dp(18).toFloat(); setColor(0xE0141519.toInt()); setStroke(1, 0x33FFFFFF) }
         }
         val clock = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        timeView = text(clockText(), 30f, bold = true).also { clock.addView(it) }
+        timeView = text(clockText(), 24f, bold = true).also { clock.addView(it) }
         if (o.optBoolean("date", true)) {
             val d = SimpleDateFormat("EEEE, d 'de' MMM", Locale("pt", "BR")).format(Date())
-            clock.addView(text(d.replaceFirstChar { it.uppercase() }, 13f, 190))
+            clock.addView(text(d.replaceFirstChar { it.uppercase() }, 11f, 190))
         }
         root.addView(clock)
         val temp = o.optString("temp")
         if (o.optBoolean("showTemp", true) && temp.isNotEmpty()) {
-            root.addView(View(this).apply { setBackgroundColor(0x33FFFFFF) }, LinearLayout.LayoutParams(1, dp(40)).apply { setMargins(dp(22), 0, dp(22), 0) })
+            root.addView(View(this).apply { setBackgroundColor(0x33FFFFFF) }, LinearLayout.LayoutParams(1, dp(30)).apply { setMargins(dp(16), 0, dp(16), 0) })
             val w = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-            w.addView(text(temp, 26f, bold = true))
-            if (o.optBoolean("showCity", true)) w.addView(text(o.optString("city"), 13f, 190))
+            w.addView(text(temp, 20f, bold = true))
+            if (o.optBoolean("showCity", true)) w.addView(text(o.optString("city"), 11f, 190))
             root.addView(w)
         }
         // Coluna: conteúdo em cima, barrinha de contagem embaixo, dentro do mesmo fundo arredondado.
@@ -154,10 +187,16 @@ class ClockOverlayService : AccessibilityService() {
             orientation = LinearLayout.VERTICAL; background = bg; clipToOutline = true
             outlineProvider = android.view.ViewOutlineProvider.BACKGROUND
         }
-        box.addView(root)
+        box.addView(root, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         progress = View(this).apply {
             setBackgroundColor(0xB3FFFFFF.toInt()); pivotX = 0f
-        }.also { box.addView(it, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(3))) }
+        }.also { box.addView(it, LinearLayout.LayoutParams(0, dp(2))) }
+        // A barrinha acompanha a largura do conteúdo. Com MATCH_PARENT ela esticava a janela até a largura padrão
+        // que o Android dá a janelas sobrepostas, e a caixa ficava larga demais.
+        root.addOnLayoutChangeListener { _, l, _, r, _, _, _, _, _ ->
+            val p = progress ?: return@addOnLayoutChangeListener
+            if (p.layoutParams.width != r - l) { p.layoutParams.width = r - l; p.requestLayout() }
+        }
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
