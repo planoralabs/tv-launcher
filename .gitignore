@@ -1,0 +1,25 @@
+# Segredos e configuração local
+.env
+.env.*
+local.properties
+secrets.*
+*.keystore
+*.jks
+adbkey
+adbkey.pub
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Node / Android (próximas etapas)
+node_modules/
+build/
+.gradle/
+*.apk
+*.aab
+.idea/
+*.iml
+
+# Configuração local do Claude Code
+.claude/settings.local.json

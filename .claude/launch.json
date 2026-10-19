@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tv-launcher",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tv-launcher/serve.js"],
+      "port": 5178
+    }
+  ]
+}
