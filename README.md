@@ -10,11 +10,14 @@ Launcher personalizado para Android TV / Google TV (Philips Ambilight), no estil
 | Parte | Na TV vem de |
 |---|---|
 | Barra de apps | Apps instalados, com o banner oficial de cada um |
-| Entradas | HDMI 1–4 e TV ao vivo do sistema |
-| Clima e nascer/pôr do sol | [Open-Meteo](https://open-meteo.com) (gratuito, sem chave) |
+| Entradas | Entradas HDMI que a TV informa, com o nome do aparelho via HDMI-CEC quando houver |
+| Atalho de rede | Conexão atual (cabo ou nome do Wi-Fi) e se há internet |
+| Bluetooth | Dispositivos pareados de verdade; parear abre a tela do sistema |
+| Clima e nascer/pôr do sol | [Open-Meteo](https://open-meteo.com), na cidade detectada pela internet da TV ([ipwho.is](https://ipwho.is)) ou escolhida em Personalizar → Widgets. Selecionar o widget abre a previsão de 7 dias |
 | Notícias | RSS do g1 e do ge, por categoria |
-| Destaques | [TMDB](https://www.themoviedb.org): em alta na semana, só dos serviços instalados e disponíveis no Brasil (precisa de chave) |
-| Ambilight | Menus oficiais da Philips (estilo, brilho, saturação, cor da parede) |
+| Destaques | [TMDB](https://www.themoviedb.org): 12 em alta na semana por aba, só dos serviços instalados e disponíveis no Brasil, com "Mais títulos" no fim. Ao selecionar, abre direto no título dentro do app (link do [JustWatch](https://www.justwatch.com), conferido pelo ID do TMDB) |
+| Ambilight | Ligar/desligar, estilo, brilho e saturação na tela inicial, aplicados nos menus oficiais da Philips |
+| Relógio flutuante | Serviço próprio que mostra hora e clima por cima de qualquer app, no botão do controle escolhido |
 
 O Personalizar e o relógio flutuante continuam sendo deste projeto. A lógica dos destaques foi adaptada do [Free My TV](https://github.com/simbasjungles/free-my-tv) (MIT).
 
@@ -77,6 +80,23 @@ Para voltar ao launcher original:
 
 ```bash
 adb shell pm enable com.google.android.tvlauncher
+```
+
+### Serviço "TV Launcher: relógio e Ambilight"
+
+O relógio flutuante e os controles de Ambilight dependem de um serviço de acessibilidade do app. Esta TV não mostra a tela de Acessibilidade, então ele é ligado pelo computador (uma vez):
+
+```bash
+adb shell settings put secure enabled_accessibility_services com.planoralabs.tvlauncher/.overlay.ClockOverlayService
+adb shell settings put secure accessibility_enabled 1
+```
+
+O serviço só lê as telas de Ambilight da Philips e as teclas do controle (para o botão do relógio). A Philips não oferece API de Ambilight para outros apps: o launcher abre o menu oficial, toca no item e lê o resultado, então o menu pisca na tela a cada ajuste. Brilho e saturação só mudam com ← → no menu; essas duas teclas são enviadas pelo ADB da própria TV (cliente adaptado do Free My TV). Na primeira vez a TV pergunta "Permitir a depuração USB?" para o próprio app: marque "Sempre permitir".
+
+Para o nome do Wi-Fi aparecer no atalho de rede:
+
+```bash
+adb shell pm grant com.planoralabs.tvlauncher android.permission.ACCESS_FINE_LOCATION
 ```
 
 ## Documentação

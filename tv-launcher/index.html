@@ -64,6 +64,7 @@ body.noframe #glow, body.noframe #hint { display: none; }
 
 /* ---------- Tela (1920×1080, escalada) ---------- */
 #stage {
+  visibility: hidden;   /* só aparece depois de layout() calcular a escala (evita a tela gigante ao abrir) */
   position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
   transform-origin: 0 0; overflow: hidden; border-radius: 8px;
   box-shadow: 0 0 0 12px #050505, 0 40px 90px rgba(0,0,0,.7);
@@ -112,7 +113,16 @@ h1 { font-size: 78px; font-weight: 700; letter-spacing: -.025em; margin: 0; line
 #date::first-letter { text-transform: uppercase; }
 
 /* Destaques */
-.hero { display: flex; gap: 40px; height: 534px; }
+.hero { height: 558px; overflow: hidden; padding: 24px 40px 0; margin: -24px -40px 0; }
+.hero-track { display: flex; gap: 40px; transition: transform .45s var(--ease); }
+html.tv .hero-track { transition-duration: .25s; }
+.hero .card { flex: none; }
+.more-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: var(--tile); color: var(--text); border: 1px solid var(--stroke); }
+.more-card::after { display: none; }
+.more-card svg { width: 64px; height: 64px; color: var(--text2); }
+.more-card b { font-size: 30px; font-weight: 600; }
+.more-card small { font-size: 20px; color: var(--text2); }
+.more-card:focus { background: var(--tile-focus); }
 .card { display: flex; flex-direction: column; gap: 18px; }
 .card.feature { width: 1000px; }
 .card.poster { width: 300px; }
@@ -269,6 +279,41 @@ button.widget:focus { transform: scale(1.035); background: var(--tile-focus); bo
 .poster .art.img .art-title { display: none; }
 .ambi-note { margin: 0; font-size: 20px; line-height: 1.35; color: var(--text2); }
 
+.ambi-top { display: flex; gap: 10px; margin-top: 16px; }
+.ambi-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; font-size: 19px; color: var(--text2); }
+.ambi-row .lbl { width: 100px; }
+.ambi-row .bar { flex: 1; }
+.ambi-row .num { width: 34px; text-align: right; color: var(--text); font-weight: 600; }
+.ambi-row .bbtn { width: 42px; height: 42px; font-size: 24px; }
+.panel.wxp { width: 1920px; max-width: none; height: 1080px; max-height: none; border-radius: 0; border: 0; padding: 80px 120px;
+  background: linear-gradient(160deg, var(--bg1), var(--bg2)); display: flex; flex-direction: column; justify-content: center; }
+.wxp .wxp-top h2 { font-size: 52px; }
+.wxp .wxp-hours { margin-top: 10px; }
+.wxp-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 30px; }
+.wxp-top h2 { display: flex; align-items: center; gap: 10px; }
+.wxp-top h2 svg { width: 34px; height: 34px; color: var(--text2); }
+.wxp-btns { display: flex; gap: 12px; }
+.wxp-now { display: flex; align-items: center; gap: 26px; margin-top: 6px; }
+.wxp-now svg { width: 120px; height: 120px; color: var(--text2); }
+.wxp-now b { font-size: 140px; font-weight: 200; letter-spacing: -.05em; line-height: 1; }
+.wxp-desc { font-size: 34px; font-weight: 500; }
+.wxp-mm { font-size: 23px; color: var(--text2); margin-top: 8px; }
+.wxp-det { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin: 26px 0 22px; }
+.wxp-det div { background: var(--tile); border-radius: 22px; padding: 16px 22px; font-size: 19px; color: var(--text2); }
+.wxp-det b { display: block; font-size: 30px; color: var(--text); font-weight: 600; margin-top: 4px; }
+.wxp-hours { display: grid; grid-template-columns: repeat(12, 1fr); text-align: center; padding: 16px 0; border-top: 1px solid var(--stroke); border-bottom: 1px solid var(--stroke); }
+.wxp-hours span { display: block; font-size: 19px; color: var(--text2); }
+.wxp-hours svg { width: 40px; height: 40px; margin: 10px 0 6px; color: var(--text2); }
+.wxp-hours b { font-size: 24px; font-weight: 500; }
+.wxp-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-top: 22px; }
+.wxp-days div { background: var(--tile); border-radius: 22px; padding: 16px 10px; text-align: center; font-size: 21px; }
+.wxp-days span { display: block; color: var(--text2); text-transform: capitalize; }
+.wxp-days svg { width: 46px; height: 46px; margin: 8px 0; color: var(--text2); }
+.wxp-days small { display: block; font-size: 17px; color: #4FA3FF; margin-top: 4px; }
+.wxp-days em { font-style: normal; color: var(--text2); margin-left: 8px; }
+.inp { width: 100%; font: inherit; font-size: 28px; padding: 18px 24px; border-radius: 20px; border: 2px solid var(--stroke); background: var(--tile); color: var(--text); margin: 6px 0 18px; }
+.inp:focus { border-color: var(--accent); background: var(--tile-focus); }
+
 /* TV: sem desfoques pesados. backdrop-filter e blur grandes travam a GPU da TV. */
 html.tv * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html.tv .blobs i { filter: none; opacity: .9; }
@@ -279,6 +324,9 @@ html.tv .f { transition: transform .16s var(--ease), background .12s, color .12s
 html.tv #content { transition-duration: .35s; }
 html.tv .dock-track { transition-duration: .25s; }
 html.tv .dock, html.tv .widget, html.tv .chip { background: var(--panel); }
+/* Entradas + atalhos numa fileira só: chips um pouco mais estreitos. */
+.chip { width: 134px; }
+.chip span { max-width: 120px; }
 
 /* Painéis */
 #overlay {
@@ -444,13 +492,17 @@ const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 /* Busca texto da internet: na TV pelo app Android (sem bloqueio de CORS), no computador pelo fetch. */
 const tvReq = {}; let tvReqN = 0;
 window.tvFetchDone = (id, ok, body) => { const r = tvReq[id]; delete tvReq[id]; if (r) ok ? r.res(body) : r.rej(new Error(body)); };
-const getText = (url, token) => TV
-  ? new Promise((res, rej) => { const id = ++tvReqN; tvReq[id] = { res, rej }; token ? TV.fetchAuth(id, url, token) : TV.fetch(id, url); })
-  : fetch(url, token ? { headers: { Authorization: 'Bearer ' + token } } : {}).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
+const getText = (url, token, post) => TV
+  ? new Promise((res, rej) => { const id = ++tvReqN; tvReq[id] = { res, rej }; post ? TV.fetchPost(id, url, post) : token ? TV.fetchAuth(id, url, token) : TV.fetch(id, url); })
+  : fetch(url, post ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: post } : token ? { headers: { Authorization: 'Bearer ' + token } } : {})
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
 
 /* ---------- Ícones ---------- */
 const S = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 const ICON = {
+  wifi: S('<path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.2" r="1" fill="currentColor"/>'),
+  ethernet: S('<rect x="4" y="4" width="16" height="13" rx="2"/><path d="M8 17v3h8v-3M8 8v3M11 8v3M13 8v3M16 8v3"/>'),
+  pin: S('<path d="M12 21s-6.5-5.7-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="10" r="2.3"/>'),
   bt: S('<path d="M7 7l10 10-5 5V2l5 5L7 17"/>'),
   hdmi: S('<path d="M3 8h18v5l-3 3H6l-3-3z"/><path d="M8 11.5h8"/>'),
   tv: S('<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/>'),
@@ -556,6 +608,7 @@ const NAME_PRESETS = ['', 'PS5', 'Xbox', 'Nintendo Switch', 'Soundbar', 'Apple T
 const NAME_ICON = { 'PS5': 'game', 'Xbox': 'game', 'Nintendo Switch': 'game', 'Soundbar': 'soundbar', 'Apple TV': 'tv', 'Chromecast': 'tv', 'PC': 'monitor', 'Decodificador': 'antenna' };
 const SHORTCUTS = {
   bt: { label: 'Bluetooth', icon: 'bt' },
+  net: { label: 'Rede', icon: 'wifi' },
   audio: { label: 'Saída de som', icon: 'speaker' },
   ambi: { label: 'Ambilight', icon: 'ambi' },
   apps: { label: 'Todos os apps', icon: 'grid' },
@@ -624,12 +677,12 @@ const DEFAULT_CFG = {
   apps: ALL_APPS.map((a, i) => ({ id: a.id, on: i < DOCK_VISIBLE })),
   shortcuts: Object.keys(SHORTCUTS).map(id => ({ id, on: true })),
   widgets: Object.keys(WIDGETS).map(id => ({ id, on: true })),
-  inputs: { live: { on: true, name: '' }, hdmi1: { on: true, name: 'PS5' }, hdmi2: { on: true, name: '' }, hdmi3: { on: true, name: 'Soundbar' }, hdmi4: { on: true, name: '' } },
+  inputs: { live: { on: true, name: '' }, hdmi1: { on: true, name: TV ? '' : 'PS5' }, hdmi2: { on: true, name: '' }, hdmi3: { on: true, name: TV ? '' : 'Soundbar' }, hdmi4: { on: true, name: '' } },
   showInputs: true, showShortcuts: true,
   accent: '#0a84ff', bg: 'gradiente', motion: 'completas',
   title: 'para-voce', showTabs: true, startTab: 'explorar',
   clock: '24', showDate: true, showWeatherTop: true,
-  city: 'São Paulo', unit: 'C', newsCat: 'Todas', newsSpeed: 9,
+  city: 'São Paulo', loc: 'auto', lat: -23.55, lon: -46.63, unit: 'C', newsCat: 'Todas', newsSpeed: 9,
   osdDate: true, osdTemp: true, osdCity: true, osdDur: 5, osdPos: 'inferior'
 };
 function loadCfg() {
@@ -645,6 +698,12 @@ function loadCfg() {
   return c;
 }
 let cfg = loadCfg();
+// Na TV, apaga os nomes de exemplo do protótipo (PS5, Soundbar) que ficaram salvos antes.
+if (TV && !store.get('migr1', false)) {
+  if (cfg.inputs.hdmi1.name === 'PS5') cfg.inputs.hdmi1.name = '';
+  if (cfg.inputs.hdmi3.name === 'Soundbar') cfg.inputs.hdmi3.name = '';
+  store.set('cfg', cfg); store.set('migr1', true);
+}
 const saveCfg = () => store.set('cfg', cfg);
 
 const state = {
@@ -698,7 +757,7 @@ const BLOCK_HTML = {
 function blockHasContent(id) {
   if (id === 'hero') return !TV || heroReal;
   if (id === 'apps') return cfg.apps.some(a => a.on);
-  if (id === 'controls') return (cfg.showInputs && INPUT_IDS.some(i => cfg.inputs[i].on)) || (cfg.showShortcuts && cfg.shortcuts.some(s => s.on));
+  if (id === 'controls') return (cfg.showInputs && inputIds().some(i => inp(i).on)) || (cfg.showShortcuts && cfg.shortcuts.some(s => s.on));
   if (id === 'widgets') return cfg.widgets.some(w => w.on);
   return true;
 }
@@ -711,16 +770,19 @@ function artStyle(c) {
 }
 function renderHero() {
   const el = $('#hero'); if (!el) return;
-  el.innerHTML = CONTENT[state.tab].map((it, i) => `
+  heroX = 0;
+  el.innerHTML = '<div class="hero-track">' + CONTENT[state.tab].map((it, i) => `
     <div class="card ${i ? 'poster' : 'feature'}">
       <button class="art f${(i ? it.poster : it.back) ? ' img' : ''}" data-act="open:${i}" data-i="${i}" style="${(i ? it.poster : it.back) ? `background-image:url('${i ? it.poster : it.back}')` : artStyle(it.c)}">
-        <svg class="sil s1" viewBox="0 0 100 30" preserveAspectRatio="none"><path d="${SILS[i][1]}"/></svg>
-        <svg class="sil s2" viewBox="0 0 100 30" preserveAspectRatio="none"><path d="${SILS[i][0]}"/></svg>
+        <svg class="sil s1" viewBox="0 0 100 30" preserveAspectRatio="none"><path d="${SILS[i % SILS.length][1]}"/></svg>
+        <svg class="sil s2" viewBox="0 0 100 30" preserveAspectRatio="none"><path d="${SILS[i % SILS.length][0]}"/></svg>
         ${i === 0 ? `<span class="art-badge">${it.app}</span>` : ''}
         <span class="art-title">${esc(it.t)}</span>
       </button>
       <div class="cap"><b>${esc(it.t)}</b>${i === 0 ? `<small>${esc(it.meta)} · ${it.app}</small>` : `<small>${it.app}</small>`}</div>
-    </div>`).join('');
+    </div>`).join('')
+    + (heroReal ? `<div class="card poster"><button class="art f more-card" data-act="heromore">${ICON.reset}<b>${heroLoading ? 'Buscando…' : 'Mais títulos'}</b><small>Os próximos ${HERO_MAX} em alta</small></button></div>` : '')
+    + '</div>';
 }
 const appById = id => ALL_APPS.find(a => a.id === id);
 const tileHtml = a => `<span class="tile ${a.cls}">${a.html}</span>`;
@@ -741,6 +803,15 @@ function scrollDock(x) {
   vp.classList.toggle('more-l', dockX > 0);
   vp.classList.toggle('more-r', dockX < max - 1);
 }
+/* Destaques: o trilho anda para a direita conforme o foco, como a barra de apps. */
+let heroX = 0;
+function ensureHeroCard(art) {
+  const card = art.closest('.card'), track = card.parentNode, vis = track.parentNode.clientWidth - 80;
+  const l = card.offsetLeft, r = l + card.offsetWidth, peek = 160;
+  if (l < heroX + peek) heroX = l - peek; else if (r > heroX + vis - peek) heroX = r - vis + peek;
+  heroX = Math.max(0, Math.min(heroX, track.scrollWidth - vis));
+  track.style.transform = `translateX(${-heroX}px)`;
+}
 function ensureDockTile(tile) {
   const vp = tile.closest('.dock-vp'), vis = vp.clientWidth - 60, peek = 120;
   const l = tile.offsetLeft, r = l + tile.offsetWidth;
@@ -750,14 +821,35 @@ function ensureDockTile(tile) {
 function chip(act, it, extra = '') {
   return `<button class="chip f ${extra}" data-act="${act}">${ICON[it.icon]}<span>${it.label}</span>${it.sub ? `<small>${it.sub}</small>` : ''}</button>`;
 }
+/* Na TV: as entradas HDMI que o sistema lista, com o estado do cabo e o nome do aparelho (HDMI-CEC). */
+let realInputs = null, net = null;
+function loadDevices() {
+  if (!TV) return false;
+  const before = JSON.stringify([realInputs, net]);
+  try { realInputs = JSON.parse(TV.inputs()); } catch (e) { realInputs = []; }
+  try { net = JSON.parse(TV.network()); } catch (e) { net = null; }
+  return JSON.stringify([realInputs, net]) !== before;
+}
+const inputIds = () => realInputs ? ['live', ...realInputs.filter(i => !i.hidden).map(i => i.id)] : INPUT_IDS;
+const inp = id => cfg.inputs[id] || (cfg.inputs[id] = { on: true, name: '' });
 function inputInfo(id) {
   if (id === 'live') return { label: 'TV ao Vivo', icon: 'tv' };
-  const n = cfg.inputs[id].name, port = 'HDMI ' + id.slice(4);
-  return n ? { label: n, sub: port, icon: NAME_ICON[n] || 'hdmi' } : { label: port, icon: 'hdmi' };
+  const r = realInputs && realInputs.find(i => i.id === id);
+  const port = r ? (r.custom || r.label) : 'HDMI ' + id.slice(4);
+  const n = inp(id).name || (r && r.device) || '';
+  const off = r ? r.state === 2 : NO_SIGNAL.includes(id);
+  // Esta TV responde "em espera" (1) para todas as entradas, com ou sem cabo: só 0 e 2 dizem algo de verdade.
+  const status = r ? (r.state === 2 ? 'Sem cabo' : r.state === 0 ? 'Conectado' : '') : '';
+  return n ? { label: n, sub: port, icon: NAME_ICON[n] || 'hdmi', off, status } : { label: port, sub: status, icon: 'hdmi', off, status };
+}
+function shortcutInfo(id) {
+  if (id !== 'net' || !net) return SHORTCUTS[id];
+  const label = net.type === 'ethernet' ? 'Cabo de rede' : net.type === 'wifi' ? (net.name || 'Wi-Fi') : 'Sem rede';
+  return { label, sub: net.type === 'none' ? 'Desconectado' : net.internet ? 'Conectado' : 'Sem internet', icon: net.type === 'ethernet' ? 'ethernet' : 'wifi' };
 }
 function renderControls() {
   const el = $('#controls'); if (!el) return;
-  const showIn = cfg.showInputs && INPUT_IDS.some(i => cfg.inputs[i].on);
+  const showIn = cfg.showInputs && inputIds().some(i => inp(i).on);
   const showSc = cfg.showShortcuts && cfg.shortcuts.some(s => s.on);
   el.innerHTML = (showIn ? '<div class="group"><h3>Entradas</h3><div class="chips" id="inputs"></div></div>' : '')
     + (showSc ? '<div class="group"><h3>Atalhos</h3><div class="chips" id="shortcuts"></div></div>' : '');
@@ -765,14 +857,15 @@ function renderControls() {
 }
 function renderInputs() {
   const el = $('#inputs'); if (!el) return;
-  el.innerHTML = INPUT_IDS.filter(id => cfg.inputs[id].on).map(id => {
-    const cls = (id === state.input ? 'active ' : '') + (NO_SIGNAL.includes(id) && id !== state.input ? 'dim' : '');
-    return chip('input:' + id, inputInfo(id), cls);
+  el.innerHTML = inputIds().filter(id => inp(id).on).map(id => {
+    const info = inputInfo(id);
+    const cls = (id === state.input ? 'active ' : '') + (info.off && id !== state.input ? 'dim' : '');
+    return chip('input:' + id, info, cls);
   }).join('');
 }
 function renderShortcuts() {
   const el = $('#shortcuts'); if (!el) return;
-  el.innerHTML = cfg.shortcuts.filter(s => s.on).map(s => chip('sc:' + s.id, SHORTCUTS[s.id])).join('');
+  el.innerHTML = cfg.shortcuts.filter(s => s.on).map(s => chip('sc:' + s.id, shortcutInfo(s.id))).join('');
 }
 function renderWidgets() {
   const el = $('#widgets'); if (!el) return;
@@ -793,19 +886,80 @@ const kindAt = h => isNightAt(h * 60 + 30) ? 'moon' : ['partly', 'partly', 'clou
 /* Previsão real do Open-Meteo (gratuito, sem chave). Sem internet, cai no simulado. */
 let wx = null;
 const kindOf = (code, day) => code <= 1 ? (day ? 'sun' : 'moon') : code === 2 ? (day ? 'partly' : 'moon') : code <= 48 ? 'cloud' : code >= 95 ? 'storm' : 'rain';
-const descOf = code => code === 0 ? 'Céu limpo' : code === 1 ? 'Predomínio de sol' : code === 2 ? 'Parcialmente nublado' : code === 3 ? 'Nublado'
+const descOf = (code, day = 1) => code === 0 ? 'Céu limpo' : code === 1 ? (day ? 'Predomínio de sol' : 'Poucas nuvens') : code === 2 ? 'Parcialmente nublado' : code === 3 ? 'Nublado'
   : code <= 48 ? 'Neblina' : code <= 57 ? 'Garoa' : code <= 67 ? 'Chuva' : code <= 77 ? 'Neve' : code <= 82 ? 'Pancadas de chuva' : 'Tempestade';
-async function loadWeather() {
-  const c = CITIES.find(x => x[0] === cfg.city) || CITIES[0];
+/* Localização automática pela internet da TV (ipwho.is), guardada por 12 h. Ou a cidade escolhida no Personalizar. */
+async function autoLocate() {
+  const cached = store.get('ipLoc', null);
+  if (cached && Date.now() - cached.at < 12 * 3600e3) return cached;
   try {
-    const j = JSON.parse(await getText(`https://api.open-meteo.com/v1/forecast?latitude=${c[1]}&longitude=${c[2]}&current=temperature_2m,weather_code,is_day`
-      + '&hourly=temperature_2m,weather_code,is_day&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=2'));
+    const j = JSON.parse(await getText('https://ipwho.is/?lang=pt-BR'));
+    if (!j.success) throw new Error(j.message);
+    const loc = { at: Date.now(), name: j.city, region: j.region_code || j.region, lat: j.latitude, lon: j.longitude };
+    store.set('ipLoc', loc);
+    return loc;
+  } catch (e) { return null; }
+}
+async function loadWeather() {
+  if (cfg.loc !== 'manual') {
+    const l = await autoLocate();
+    if (l && (l.name !== cfg.city || l.lat !== cfg.lat)) { Object.assign(cfg, { city: l.name, lat: l.lat, lon: l.lon }); saveCfg(); }
+  }
+  try {
+    const j = JSON.parse(await getText(`https://api.open-meteo.com/v1/forecast?latitude=${cfg.lat}&longitude=${cfg.lon}`
+      + '&current=temperature_2m,weather_code,is_day,apparent_temperature,relative_humidity_2m,wind_speed_10m'
+      + '&hourly=temperature_2m,weather_code,is_day,precipitation_probability'
+      + '&daily=weather_code,sunrise,sunset,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max&timezone=auto&forecast_days=7'));
     wx = j; SUNRISE = j.daily.sunrise[0].slice(11, 16); SUNSET = j.daily.sunset[0].slice(11, 16);
   } catch (e) { wx = null; }
-  renderWeather(); applyTheme();
+  renderWeather(); applyTheme(); syncOsd();
+  if (state.panel === 'weather') renderPanel();
+}
+function renderWeatherFull() {
+  const now = wxNow();
+  const temps = [...Array(24)].map((_, i) => tempAt(i));
+  const [mx, mn] = wx ? [wx.daily.temperature_2m_max[0], wx.daily.temperature_2m_min[0]].map(Math.round) : [Math.max(...temps), Math.min(...temps)];
+  const c = wx && wx.current;
+  const det = c ? [['Sensação', fmtT(Math.round(c.apparent_temperature))], ['Umidade', Math.round(c.relative_humidity_2m) + '%'], ['Vento', Math.round(c.wind_speed_10m) + ' km/h'],
+    ['Índice UV', Math.round(wx.daily.uv_index_max[0])], ['Sol', `${SUNRISE} – ${SUNSET}`]] : [];
+  const hours = wxHours(24).filter((_, i) => i % 2 === 0).map(x => `<div><span>${x.h}h</span>${W[x.k]}<b>${fmtT(x.t)}</b></div>`).join('');
+  const days = wx ? wx.daily.time.map((t, i) => {
+    const d = new Date(t + 'T12:00');
+    const name = i === 0 ? 'Hoje' : d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+    const rain = wx.daily.precipitation_probability_max[i];
+    return `<div><span>${name}</span>${W[kindOf(wx.daily.weather_code[i], 1)]}<b>${fmtT(Math.round(wx.daily.temperature_2m_max[i]))}</b><em>${fmtT(Math.round(wx.daily.temperature_2m_min[i]))}</em>${rain ? `<small>${rain}% chuva</small>` : '<small>&nbsp;</small>'}</div>`;
+  }).join('') : '';
+  $('#overlay').innerHTML = `<div class="panel wxp">
+    <div class="wxp-top">
+      <div><h2>${ICON.pin}${esc(cfg.city)}</h2><p class="sub">${cfg.loc === 'manual' ? 'Cidade escolhida' : 'Localização automática'} · ${wx ? 'Open-Meteo' : 'sem conexão, dados simulados'}</p></div>
+      <div class="wxp-btns"><button class="mode f" data-act="wloc:search">Trocar cidade</button>${cfg.loc === 'manual' ? '<button class="mode f" data-act="wloc:auto">Usar automática</button>' : ''}</div>
+    </div>
+    <div class="wxp-now">${W[now.k]}<b>${fmtT(now.t)}</b><div><div class="wxp-desc">${now.desc}</div><div class="wxp-mm">Máx. ${fmtT(mx)} · Mín. ${fmtT(mn)}</div></div></div>
+    ${det.length ? `<div class="wxp-det">${det.map(([l, v]) => `<div>${l}<b>${v}</b></div>`).join('')}</div>` : ''}
+    <div class="wxp-hours">${hours}</div>
+    ${days ? `<div class="wxp-days">${days}</div>` : ''}
+  </div>`;
+}
+/* Busca de cidade (Open-Meteo Geocoding): digite com o teclado da TV e aperte OK. */
+let cityResults = [];
+function renderCitySearch() {
+  $('#overlay').innerHTML = `<div class="panel"><h2>Escolher cidade</h2><p class="sub">Selecione o campo, digite com o teclado da TV e confirme</p>
+    <input class="inp f" id="cityq" type="search" placeholder="Ex.: Sinop, Curitiba, Lisboa" autocomplete="off">
+    <div id="cityres">${cityResults.map((r, i) => rowHtml({ act: 'wpick:' + i, icon: 'pin', label: esc(r.name), sub: esc([r.admin1, r.country].filter(Boolean).join(', ')) })).join('')}</div></div>`;
+}
+async function searchCity(q) {
+  if (!q.trim()) return;
+  try {
+    const j = JSON.parse(await getText('https://geocoding-api.open-meteo.com/v1/search?count=8&language=pt&format=json&name=' + encodeURIComponent(q.trim())));
+    cityResults = j.results || [];
+  } catch (e) { cityResults = []; }
+  if (state.panel !== 'city') return;
+  $('#cityres').innerHTML = cityResults.length ? cityResults.map((r, i) => rowHtml({ act: 'wpick:' + i, icon: 'pin', label: esc(r.name), sub: esc([r.admin1, r.country].filter(Boolean).join(', ')) })).join('')
+    : '<p class="note">Nenhuma cidade encontrada.</p>';
+  const first = $('#cityres .f'); if (first) focusEl(first);
 }
 function wxNow() {
-  if (wx) { const c = wx.current; return { t: Math.round(c.temperature_2m), k: kindOf(c.weather_code, c.is_day), desc: descOf(c.weather_code) }; }
+  if (wx) { const c = wx.current; return { t: Math.round(c.temperature_2m), k: kindOf(c.weather_code, c.is_day), desc: descOf(c.weather_code, c.is_day) }; }
   const k = kindAt(new Date().getHours());
   return { t: tempAt(new Date().getHours()), k, desc: { sun: 'Ensolarado', partly: 'Parcialmente nublado', cloud: 'Nublado', moon: 'Céu limpo' }[k] };
 }
@@ -836,11 +990,17 @@ function renderWeather() {
 }
 function renderAmbi() {
   const el = $('#ambi'); if (!el) return;
-  if (TV) {   // o estado real só é acessível pelos menus da própria Philips
+  if (TV) {   // aciona os menus oficiais da Philips pelo serviço do launcher (o menu pisca na tela)
+    const a = ambi, on = a.on, seg = (n, v, min) => [...Array(n)].map((_, i) => `<i class="${v != null && i < v - min + 1 && on !== false ? 'on' : ''}"></i>`).join('');
     el.innerHTML = `
-      <div class="w-head"><span>Ambilight</span><span class="pill">Philips</span></div>
-      <div class="ambi-mid"><p class="ambi-note">Ligar, estilo, brilho e cores ficam nos ajustes oficiais da TV.</p></div>
-      <div class="modes"><button class="mode f" data-act="ambi:open:style">Estilo e ligar</button><button class="mode f" data-act="ambi:open:osd">Ajustes rápidos</button></div>`;
+      <div class="w-head"><span>Ambilight</span><span class="pill">${ambiBusy ? 'Aplicando…' : on == null ? 'Philips' : on ? 'Ligado' : 'Desligado'}</span></div>
+      <div class="ambi-top">
+        <button class="mode f ${on ? 'on' : ''}" data-act="ambx:power">${on ? 'Desligar' : 'Ligar'}</button>
+        <button class="mode f" data-act="ambx:style">${esc(a.style || 'Estilo')} ›</button>
+        <button class="mode f" data-act="ambx:more">Mais</button>
+      </div>
+      <div class="ambi-row"><span class="lbl">Brilho</span><button class="bbtn f" data-act="ambx:bright-">−</button><div class="bar">${seg(10, a.bright, 1)}</div><button class="bbtn f" data-act="ambx:bright+">+</button><span class="num">${a.bright ?? '–'}</span></div>
+      <div class="ambi-row"><span class="lbl">Saturação</span><button class="bbtn f" data-act="ambx:sat-">−</button><div class="bar">${seg(5, a.sat, -2)}</div><button class="bbtn f" data-act="ambx:sat+">+</button><span class="num">${a.sat ?? '–'}</span></div>`;
     return;
   }
   const m = state.ambi.mode, b = state.ambi.bright;
@@ -856,6 +1016,21 @@ function renderAmbi() {
       </div>
     </div>
     <div class="modes">${AMBI_MODES.map(([id, l]) => `<button class="mode f ${id === m ? 'on' : ''}" data-act="ambi:mode:${id}">${l}</button>`).join('')}</div>`;
+}
+/* Ambilight real (TV): estado lido dos menus da Philips e guardado pelo app. */
+const AMBI_STYLES = ['Padrão', 'Natural', 'Esportes', 'Vívido', 'Vídeo game', 'Lava quente', 'Fundo do mar', 'Natureza', 'Branco frio', 'Branco quente'];
+let ambi = {}, ambiBusy = false;
+if (TV) try { ambi = JSON.parse(TV.ambiState()); } catch (e) {}
+function renderAmbiKeepFocus() {
+  const a = document.activeElement && document.activeElement.dataset.act;
+  renderAmbi();
+  if (!state.panel && a && a.startsWith('ambx:')) refocus(a);
+}
+window.tvAmbiDone = s => { ambiBusy = false; ambi = s; if (s.error) toast('Ambilight: ' + s.error); renderAmbiKeepFocus(); };
+function ambiCmd(cmd) {
+  if (ambiBusy) return;
+  if (!TV.ambi(cmd)) { toast('Ligue o serviço do TV Launcher (veja Personalizar → Relógio flutuante)'); return; }
+  ambiBusy = true; renderAmbiKeepFocus();
 }
 let newsIdx = 0, newsTimer, liveNews = null;
 const agoText = d => { const m = Math.max(1, Math.round((Date.now() - d) / 60000)); return m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : `há ${Math.round(m / 1440)} d`; };
@@ -934,6 +1109,7 @@ function layout() {
   const s = fr ? Math.min(vw * 0.84 / 1920, vh * 0.8 / 1080) : Math.min(vw / 1920, vh / 1080);
   const w = 1920 * s, h = 1080 * s, x = (vw - w) / 2, y = (vh - h) / 2 - (fr ? vh * 0.025 : 0);
   $('#stage').style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+  $('#stage').style.visibility = 'visible';
   Object.assign($('#glow').style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
   document.body.classList.toggle('noframe', !fr);
 }
@@ -986,6 +1162,8 @@ function move(dir) {
       if (d <= 4) continue;
       const gap = Math.max(0, dir === 'right' ? b.left - a.right : a.left - b.right);
       const off = Math.max(0, Math.max(a.top, b.top) - Math.min(a.bottom, b.bottom));
+      // Na tela inicial, ← → só andam na mesma fileira: no fim da barra de apps o foco fica parado.
+      if (!state.panel && off > 0) continue;
       score = gap + off * 4 + Math.abs(by - ay) * 0.2;
     } else {
       const d = dir === 'down' ? by - ay : ay - by;
@@ -1005,8 +1183,22 @@ function back() {
 }
 
 /* ---------- Painéis simples ---------- */
+const BT_KIND = { audio: ['headphones', 'Áudio'], input: ['game', 'Controle ou teclado'], phone: ['remote', 'Celular'], computer: ['monitor', 'Computador'] };
+function btPanelTv() {
+  let b = { on: false, devices: [] };
+  try { b = JSON.parse(TV.btDevices()); } catch (e) {}
+  return {
+    title: 'Bluetooth', sub: b.on ? 'Dispositivos pareados com a TV' : 'O Bluetooth da TV está desligado',
+    rows: [
+      ...b.devices.map(d => { const k = BT_KIND[d.kind] || ['bt', 'Dispositivo']; return { act: 'btx:more', icon: k[0], label: esc(d.name), sub: k[1], end: d.connected ? 'Conectado' : 'Desconectado', on: d.connected }; }),
+      ...(b.devices.length ? [] : [{ note: 'Nenhum dispositivo pareado ainda.' }]),
+      { act: 'btx:pair', icon: 'search', label: 'Parear novo dispositivo', sub: 'Controles, fones, teclados e caixas de som' },
+      { act: 'btx:more', icon: 'sliders', label: 'Mais opções', sub: 'Conectar, desconectar e esquecer: ajustes da TV' }
+    ]
+  };
+}
 const PANELS = {
-  bt: () => ({
+  bt: () => TV ? btPanelTv() : ({
     title: 'Bluetooth', sub: 'Dispositivos pareados com a TV',
     rows: [
       ...state.bt.map(d => ({ act: 'bt:' + d.id, icon: d.icon, label: d.name, sub: d.kind, end: d.busy ? 'Conectando…' : d.on ? 'Conectado' : 'Desconectado', on: d.on && !d.busy })),
@@ -1036,6 +1228,8 @@ function rowHtml(r) {
 }
 function renderPanel() {
   if (state.panel === 'custom') return renderSettings();
+  if (state.panel === 'weather') return renderWeatherFull();
+  if (state.panel === 'city') return renderCitySearch();
   if (state.panel === 'apps') {
     $('#overlay').innerHTML = `<div class="panel"><h2>Todos os apps</h2><p class="sub">Para escolher os apps da barra, use Personalizar → Apps</p><div class="grid">${
       ALL_APPS.filter(a => avail(a.id)).map(a => `<button class="gapp f" data-act="app:${a.id}"><span class="mt big">${tileHtml(a)}</span>${a.name}</button>`).join('')}</div></div>`;
@@ -1106,7 +1300,9 @@ const SETTINGS = {
   relogio: () => ({
     title: 'Relógio flutuante', sub: 'Hora e clima por cima de qualquer app, com um botão do controle',
     rows: [
-      { note: 'No protótipo, aperte H em qualquer tela, inclusive com um app aberto. Na TV, ele funcionará por cima de YouTube, Netflix e qualquer outro app.' },
+      TV ? (TV.serviceOn() ? { note: 'Funciona por cima de qualquer app: YouTube, Netflix, TV ao vivo…' }
+        : { note: 'O serviço "TV Launcher: relógio e Ambilight" está desligado. Esta TV não mostra a tela de Acessibilidade; ele é ligado pelo computador (veja o README).' })
+        : { note: 'No protótipo, aperte H em qualquer tela, inclusive com um app aberto. Na TV, ele funcionará por cima de YouTube, Netflix e qualquer outro app.' },
       { act: 'osd:test', icon: 'clock', label: 'Testar agora', sub: 'Mostra o relógio flutuante por alguns segundos' },
       { heading: 'Conteúdo' },
       tog('osdDate', 'info', 'Mostrar data', 'Dia da semana e data abaixo da hora'),
@@ -1116,7 +1312,8 @@ const SETTINGS = {
       cyc('osdPos', 'layout', 'Posição', 'Onde a barra aparece na tela'),
       cyc('osdDur', 'clock', 'Tempo na tela', 'Some sozinha depois desse tempo'),
       { heading: 'Botão do controle' },
-      { act: 'osd:key', icon: 'remote', label: 'Definir botão', sub: 'Na TV, este item espera você apertar o botão desejado', value: 'H (protótipo)' }
+      osdKeyRow(),
+      ...(TV ? [{ note: 'Funcionam os botões que chegam ao Android, como os coloridos, Info ou Opções. Home, Ambilight e os atalhos de apps costumam ficar com a Philips.' }] : [])
     ]
   }),
   apps: () => ({
@@ -1131,10 +1328,12 @@ const SETTINGS = {
     rows: [
       { heading: 'Entradas' },
       tog('showInputs', 'hdmi', 'Mostrar entradas', 'Grupo "Entradas" na tela inicial'),
-      ...INPUT_IDS.map(id => {
-        const info = inputInfo(id), on = cfg.inputs[id].on;
+      ...(realInputs ? [{ note: `A TV informa ${realInputs.length} entradas HDMI, mas não diz em quais há um cabo ligado. Use a chave ao lado para esconder as que você não usa.` }] : []),
+      ...inputIds().map(id => {
+        const info = inputInfo(id), on = inp(id).on;
         if (id === 'live') return { act: 'noop', icon: 'tv', label: 'TV ao Vivo', sub: 'Sintonizador da TV', sw: 'ivis:live', swOn: on };
-        return { act: 'cycle:iname:' + id, icon: info.icon, label: 'HDMI ' + id.slice(4), sub: (NO_SIGNAL.includes(id) ? 'Sem sinal agora · ' : '') + 'Enter troca o nome', value: cfg.inputs[id].name || 'Sem nome', sw: 'ivis:' + id, swOn: on };
+        const r = realInputs && realInputs.find(i => i.id === id);
+        return { act: 'cycle:iname:' + id, icon: info.icon, label: 'HDMI ' + id.slice(4), sub: [info.status, r && r.device ? 'Aparelho: ' + esc(r.device) : '', 'Enter troca o nome'].filter(Boolean).join(' · '), value: inp(id).name || 'Automático', sw: 'ivis:' + id, swOn: on };
       }),
       { heading: 'Atalhos' },
       tog('showShortcuts', 'grid', 'Mostrar atalhos', 'Grupo "Atalhos" na tela inicial'),
@@ -1147,13 +1346,14 @@ const SETTINGS = {
       { heading: 'Ordem e visibilidade' },
       ...cfg.widgets.map(w => moveRow('widgets', w.id, WIDGETS[w.id].label, WIDGETS[w.id].sub, { icon: WIDGETS[w.id].icon }, w.on)),
       { heading: 'Clima' },
-      cyc('city', 'globe', 'Cidade', 'Previsão real do Open-Meteo'),
+      { act: 'wloc:auto', icon: 'pin', label: 'Localização automática', sub: 'Pela internet da TV' + (cfg.loc !== 'manual' ? ` · agora: ${esc(cfg.city)}` : ''), toggle: true, on: cfg.loc !== 'manual' },
+      { act: 'wloc:search', icon: 'globe', label: 'Escolher cidade', sub: 'Digite o nome de qualquer cidade', value: cfg.loc === 'manual' ? esc(cfg.city) : 'Automática' },
       cyc('unit', 'sun', 'Unidade', 'Temperatura em todos os lugares'),
       { heading: 'Notícias' },
       cyc('newsCat', 'news', 'Categoria', 'Quais manchetes aparecem'),
       cyc('newsSpeed', 'info', 'Trocar a cada', 'Tempo até mostrar as próximas manchetes'),
       { heading: 'Ambilight' },
-      { note: 'O modo e o brilho do Ambilight ficam no próprio widget, para mudar rápido com o controle.' }
+      { note: TV ? 'O widget liga, troca o estilo e ajusta brilho e saturação pelos menus oficiais da Philips, que piscam rapidamente na tela a cada ajuste. "Mais" abre o menu completo.' : 'O modo e o brilho do Ambilight ficam no próprio widget, para mudar rápido com o controle.' }
     ]
   }),
   sistema: () => ({
@@ -1229,7 +1429,7 @@ function panelScroll(el) {
   else if (t < sc.scrollTop + 16) animateScroll(sc, t - 60);
   else if (b > sc.scrollTop + sc.clientHeight - 16) animateScroll(sc, b - sc.clientHeight + 40);
 }
-function afterCfg() { saveCfg(); applyLook(); renderHome(); }
+function afterCfg() { saveCfg(); applyLook(); renderHome(); syncOsd(); }
 function moveItem(d) {
   const { list, id } = state.moving, arr = cfg[list];
   const i = arr.findIndex(x => x.id === id), j = i + d;
@@ -1261,6 +1461,37 @@ function closeApp() {
 }
 
 /* ---------- Relógio flutuante ---------- */
+/* Na TV quem mostra a barra é o serviço Android (por cima de qualquer app); aqui só ficam as opções. */
+const KEY_NAMES = { PROG_RED: 'Vermelho', PROG_GREEN: 'Verde', PROG_YELLOW: 'Amarelo', PROG_BLUE: 'Azul', INFO: 'Info', GUIDE: 'Guia', CAPTIONS: 'Legendas',
+  TV_INPUT: 'Fonte', SETTINGS: 'Ajustes', MENU: 'Menu', BOOKMARK: 'Favoritos', MEDIA_RECORD: 'Gravar', DVR: 'Gravações', TV: 'TV' };
+const osdKey = () => { try { return JSON.parse(TV.osdKey()); } catch (e) { return { code: 0, name: '', capturing: false }; } };
+function osdKeyRow() {
+  if (!TV) return { act: 'osd:key', icon: 'remote', label: 'Definir botão', sub: 'Na TV, este item espera você apertar o botão desejado', value: 'H (protótipo)' };
+  const k = osdKey();
+  return { act: 'osd:key', icon: 'remote', label: 'Definir botão',
+    sub: k.capturing ? 'Aperte agora o botão do controle (Voltar cancela)' : 'Selecione e depois aperte o botão que vai mostrar o relógio',
+    value: k.capturing ? 'Aguardando…' : k.code ? (KEY_NAMES[k.name] || k.name) : 'Nenhum' };
+}
+let captureT;
+function captureKey() {
+  if (!TV.serviceOn()) { toast('O serviço do TV Launcher está desligado'); return; }
+  TV.osdCapture(true); refreshPanel(); refocus('osd:key');
+  const started = Date.now();
+  clearInterval(captureT);
+  captureT = setInterval(() => {
+    const k = osdKey();
+    if (k.capturing && Date.now() - started < 15000) return;
+    clearInterval(captureT);
+    if (k.capturing) TV.osdCapture(false);
+    if (state.panel === 'custom' && state.cat === 'relogio') { refreshPanel(); refocus('osd:key'); }
+    toast(k.code ? 'Botão do relógio: ' + (KEY_NAMES[k.name] || k.name) : 'Nenhum botão definido');
+  }, 300);
+}
+function syncOsd() {
+  if (!TV) return;
+  TV.setOsd(JSON.stringify({ dur: cfg.osdDur, pos: cfg.osdPos, date: cfg.osdDate, showTemp: cfg.osdTemp, showCity: cfg.osdCity,
+    clock: cfg.clock, temp: fmtT(wxNow().t), city: cfg.city }));
+}
 /* Aperto curto: mostra e some após o tempo configurado. Segurando: fica fixo e a contagem
    só começa ao soltar. Repetições automáticas da tecla segurada são ignoradas. */
 let osdT, osdClockT, osdHeld = false;
@@ -1307,12 +1538,13 @@ function toast(msg) {
 function act(a) {
   const [k, v, w] = a.split(':');
   switch (k) {
-    case 'open': { const it = CONTENT[state.tab][+v]; openApp(it.appId ? appById(it.appId) : ALL_APPS.find(x => x.name === it.app), it.t); break; }
+    case 'open': openPick(CONTENT[state.tab][+v]); break;
+    case 'heromore': moreHero(); break;
     case 'tab': focusEl($('#hero .f') || firstHome()); break;
     case 'app': openApp(appById(v)); break;
     case 'osd':
-      if (v === 'test') showOsd();
-      else toast('Na TV, aqui você aperta o botão do controle que quer usar');
+      if (v === 'test') TV ? (TV.osdTest() || toast('O serviço do TV Launcher está desligado')) : showOsd();
+      else TV ? captureKey() : toast('Na TV, aqui você aperta o botão do controle que quer usar');
       break;
     case 'input': {
       const it = inputInfo(v);
@@ -1322,26 +1554,43 @@ function act(a) {
       break;
     }
     case 'sc':
-      if (v === 'ambi' && TV) TV.openAmbilight('style');
+      if (v === 'ambi' && TV) { const b = $('[data-act="ambx:power"]'); b ? focusEl(b) : TV.openAmbilight('style'); }
       else if (v === 'ambi') { const b = document.querySelector(`[data-act="ambi:mode:${state.ambi.mode}"]`); b ? focusEl(b) : toast('Ative o widget Ambilight em Personalizar → Widgets'); }
-      else if (TV && v !== 'apps') { if (state.panel) closePanel(); TV.openSettings(v); }
+      else if (v === 'net' && !TV) toast('Abriria os ajustes de rede da TV');
+      else if (TV && !['apps', 'bt'].includes(v)) { if (state.panel) closePanel(); TV.openSettings(v); }
       else if (v === 'sys') toast('Abriria o menu de ajustes original da Philips');
       else openPanel(v);
       break;
     case 'hdr':
-      if (v === 'bt') TV ? TV.openSettings('bt') : openPanel('bt');
+      if (v === 'bt') openPanel('bt');
       if (v === 'inputs') { const b = document.querySelector(`[data-act="input:${state.input}"]`) || $('#inputs .f'); b ? focusEl(b) : toast('As entradas estão ocultas em Personalizar'); }
       if (v === 'theme') cycleTheme();
       if (v === 'settings') openPanel('custom');
       break;
+    case 'ambx':
+      if (v === 'power') ambiCmd(ambi.on ? 'off' : 'on');
+      else if (v === 'style') ambiCmd('style:' + AMBI_STYLES[(AMBI_STYLES.indexOf(ambi.style) + 1) % AMBI_STYLES.length]);
+      else if (v === 'more') TV.openAmbilight('osd');
+      else ambiCmd(v);
+      break;
     case 'ambi':
-      if (v === 'open') { TV.openAmbilight(w); break; }
       if (v === 'mode') state.ambi.mode = w;
       else state.ambi.bright = Math.min(5, Math.max(1, state.ambi.bright + (w === '+' ? 1 : -1)));
       save('ambi'); renderAmbi(); applyGlow(); refocus(a);
       break;
-    case 'weather': toast('Abriria a previsão completa'); break;
+    case 'weather': openPanel('weather'); break;
+    case 'wloc':
+      if (v === 'auto') { cfg.loc = 'auto'; store.set('ipLoc', null); saveCfg(); toast('Localização automática'); loadWeather(); if (state.panel === 'custom') { refreshPanel(); refocus(a); } }
+      else { cityResults = []; openPanel('city'); }
+      break;
+    case 'wpick': {
+      const r = cityResults[+v]; if (!r) break;
+      Object.assign(cfg, { loc: 'manual', city: r.name, lat: r.latitude, lon: r.longitude }); saveCfg();
+      closePanel(); toast('Cidade: ' + r.name); loadWeather();
+      break;
+    }
     case 'news': toast('Abriria a notícia completa'); break;
+    case 'btx': closePanel(); v === 'pair' ? TV.btPair() : TV.openSettings('sys'); break;
     case 'bt': {
       if (v === 'scan') { toast('Procurando dispositivos próximos…'); break; }
       const d = state.bt.find(x => x.id === v);
@@ -1367,7 +1616,7 @@ function act(a) {
     /* Personalizar */
     case 'cat': focusEl($('#smain .f')); break;
     case 'cycle':
-      if (v === 'iname') cfg.inputs[w].name = nextOf(NAME_PRESETS, cfg.inputs[w].name);
+      if (v === 'iname') inp(w).name = nextOf(NAME_PRESETS, inp(w).name);
       else cfg[v] = nextOf(CYCLES[v].map(o => o[0]), cfg[v]);
       if (v === 'startTab') state.tab = cfg.startTab;
       if (v === 'newsCat') { newsIdx = 0; loadNews(); }
@@ -1384,7 +1633,7 @@ function act(a) {
       item.on = !item.on; afterCfg(); refreshPanel(); refocus(a);
       break;
     }
-    case 'ivis': cfg.inputs[v].on = !cfg.inputs[v].on; afterCfg(); refreshPanel(); refocus(a); break;
+    case 'ivis': inp(v).on = !inp(v).on; afterCfg(); refreshPanel(); refocus(a); break;
     case 'move':
       if (state.moving) { dropMove(); break; }
       state.moving = { list: v, id: w }; renderSettingsMain(); refocus(a);
@@ -1405,6 +1654,12 @@ function act(a) {
 /* ---------- Eventos ---------- */
 document.addEventListener('keydown', e => {
   const dirs = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
+  if (e.target.tagName === 'INPUT') {
+    if (e.key === 'Enter') { e.preventDefault(); searchCity(e.target.value); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); e.target.blur(); move(dirs[e.key]); return; }
+    if (e.key === 'Escape') { e.preventDefault(); back(); return; }
+    return;   // letras, números e ← → ficam com o campo
+  }
   if (state.moving) {
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); moveItem(e.key === 'ArrowUp' ? -1 : 1); return; }
     if (['Enter', ' ', 'Escape', 'Backspace'].includes(e.key)) { e.preventDefault(); dropMove(); return; }
@@ -1442,6 +1697,7 @@ document.addEventListener('focusin', e => {
   }
   ensureVisible(el);
   if (el.closest('.dock-vp')) ensureDockTile(el);
+  if (el.closest('.hero-track')) ensureHeroCard(el);
   if (el.classList.contains('tab')) {
     const t = el.dataset.act.split(':')[1];
     if (t !== state.tab) {
@@ -1451,7 +1707,9 @@ document.addEventListener('focusin', e => {
       videoColors = CONTENT[t][0].c; applyGlow();
     }
   }
-  if (el.classList.contains('art')) { videoColors = CONTENT[state.tab][+el.dataset.i].c; applyGlow(); }
+  // Primeira vez no widget do Ambilight: lê o estado real nos menus da Philips.
+  if (TV && el.dataset.act && el.dataset.act.startsWith('ambx:') && ambi.on == null && !ambiBusy) ambiCmd('read');
+  if (el.classList.contains('art') && el.dataset.i) { videoColors = CONTENT[state.tab][+el.dataset.i].c; applyGlow(); }
 });
 document.addEventListener('mousemove', e => {
   if (TV) return;   // o WebView da TV dispara movimentos de mouse falsos após redesenhar, roubando o foco
@@ -1532,28 +1790,26 @@ async function tmdbPick(o, kind) {
   if (kind === 'movie' && d.runtime) parts.push(d.runtime >= 60 ? `${Math.floor(d.runtime / 60)}h${String(d.runtime % 60).padStart(2, '0')}` : d.runtime + ' min');
   if (kind === 'tv' && d.number_of_seasons) parts.push(d.number_of_seasons === 1 ? '1 temporada' : d.number_of_seasons + ' temporadas');
   const img = 'https://image.tmdb.org/t/p/';
-  return { t: d.title || d.name, meta: parts.join(' · '), app: svc[2], appId: svc[1], c: ['#101820', '#2a3a55', '#e0b070'],
+  return { t: d.title || d.name, meta: parts.join(' · '), app: svc[2], appId: svc[1], tmdbId: d.id, kind, c: ['#101820', '#2a3a55', '#e0b070'],
     back: d.backdrop_path && img + 'w1280' + d.backdrop_path, poster: d.poster_path && img + 'w500' + d.poster_path };
 }
-async function tmdbTop(kind) {
-  const hot = (await tmdb(`/trending/${kind}/week?language=pt-BR`)).results.filter(o => o.backdrop_path && o.media_type !== 'person');
-  const out = [];
-  for (const o of hot.slice(0, 20)) {
-    if (out.length === 3) break;
-    try { const p = await tmdbPick(o, o.media_type || kind); if (p) out.push(p); } catch (e) {}
-  }
-  return out;
+const HERO_MAX = 12;
+async function tmdbTop(kind, batch = 0) {
+  const pages = await Promise.all([1, 2].map(p => tmdb(`/trending/${kind}/week?language=pt-BR&page=${batch * 2 + p}`)));
+  const hot = pages.flatMap(p => p.results).filter(o => o.backdrop_path && o.media_type !== 'person').slice(0, 36);
+  const picks = await Promise.all(hot.map(o => tmdbPick(o, o.media_type || kind).catch(() => null)));
+  return picks.filter(Boolean).slice(0, HERO_MAX);
 }
 async function loadHero() {
   if (!TMDB_KEY) return;
   const cached = store.get('hero', null);
-  let data = cached && cached.v === 1 && Date.now() - cached.at < 3 * 3600e3 ? cached.data : null;
+  let data = cached && cached.v === 2 && Date.now() - cached.at < 3 * 3600e3 ? cached.data : null;
   if (!data) {
     try {
       const [explorar, filmes, series] = await Promise.all([tmdbTop('all'), tmdbTop('movie'), tmdbTop('tv')]);
       if (explorar.length < 3 || filmes.length < 3 || series.length < 3) return;
       data = { explorar, filmes, series };
-      store.set('hero', { v: 1, at: Date.now(), data });
+      store.set('hero', { v: 2, at: Date.now(), data });
     } catch (e) { return; }
   }
   Object.assign(CONTENT, data);
@@ -1561,13 +1817,61 @@ async function loadHero() {
   renderHomeKeepFocus();
 }
 
+/* "Mais títulos": troca a aba atual pelos próximos 12 em alta; quando acabam, volta ao começo. */
+const heroBatch = {}; let heroLoading = false;
+async function moreHero() {
+  if (heroLoading) return;
+  const tab = state.tab, kind = { explorar: 'all', filmes: 'movie', series: 'tv' }[tab];
+  heroLoading = true; renderHero(); refocus('heromore');
+  let next = (heroBatch[tab] || 0) + 1, list = [];
+  try { list = await tmdbTop(kind, next); } catch (e) {}
+  if (!list.length) { next = 0; try { list = await tmdbTop(kind, 0); } catch (e) {} }
+  heroLoading = false;
+  if (list.length) { heroBatch[tab] = next; CONTENT[tab] = list; }
+  if (state.tab !== tab) return;
+  renderHero();
+  focusEl($('#hero .f'));
+  toast(list.length ? (next ? `Mais ${list.length} títulos` : 'De volta aos primeiros títulos') : 'Não consegui buscar mais títulos');
+}
+
+/* Link do título dentro do app do serviço, no Brasil, pelo JustWatch (a mesma fonte de "onde assistir" do TMDB).
+   Confere o ID do TMDB para não abrir um homônimo. Sem link, abre só o app. */
+const SERVICE_HOSTS = { 'com.netflix.ninja': /netflix\.com/, 'com.amazon.amazonvideo.livingroom': /primevideo\.com|amazon\./, 'com.disney.disneyplus': /disneyplus\.com/,
+  'com.wbd.stream': /max\.com|hbomax\.com/, 'com.apple.atve.androidtv.appletv': /tv\.apple\.com/, 'com.globo.globotv': /globo/, 'com.crunchyroll.crunchyroid': /crunchyroll/ };
+async function deepLink(it) {
+  if (it.deep !== undefined) return it.deep;
+  const q = 'query S($q:String!,$c:Country!,$l:Language!){popularTitles(country:$c,first:5,filter:{searchQuery:$q}){edges{node{'
+    + 'content(country:$c,language:$l){externalIds{tmdbId}} offers(country:$c,platform:WEB){monetizationType standardWebURL}}}}}';
+  try {
+    const j = JSON.parse(await getText('https://apis.justwatch.com/graphql', null, JSON.stringify({ query: q, variables: { q: it.t, c: 'BR', l: 'pt' } })));
+    const node = j.data.popularTitles.edges.map(e => e.node).find(n => String(n.content.externalIds.tmdbId) === String(it.tmdbId));
+    const offer = node && node.offers.find(o => ['FLATRATE', 'FREE', 'ADS'].includes(o.monetizationType) && (SERVICE_HOSTS[it.appId] || /$^/).test(o.standardWebURL));
+    it.deep = offer ? offer.standardWebURL : null;
+  } catch (e) { it.deep = null; }
+  return it.deep;
+}
+async function openPick(it) {
+  if (!TV || !it.tmdbId) return openApp(it.appId ? appById(it.appId) : ALL_APPS.find(x => x.name === it.app), it.t);
+  if (!avail(it.appId)) { toast(`${it.app} não está instalado na TV`); return; }
+  toast(`Abrindo ${it.t} no ${it.app}…`);
+  const url = await deepLink(it);
+  url ? TV.openTitle(url, it.appId) : TV.openApp(it.appId);
+}
+
 /* Chamados pelo app Android: Home com o launcher já aberto, e volta de outro app. */
 window.tvHome = () => { if (state.moving) dropMove(); if (state.panel) closePanel(); renderHome(); focusEl(firstHome()); };
-window.tvResume = () => { if (!state.panel) { syncApps(); renderHomeKeepFocus(); } };
+window.tvResume = () => { loadDevices(); if (!state.panel) { syncApps(); renderHomeKeepFocus(); } };
 
+loadDevices();
 applyLook(); applyTheme(); renderHome(); applyGlow(); layout(); restartNews();
 focusEl(firstHome());
-loadWeather(); loadNews(); loadHero();
+loadWeather(); loadNews(); loadHero(); syncOsd();
+// Cabo HDMI ligado/desligado e mudança de rede aparecem sozinhos.
+if (TV) setInterval(() => {
+  if (!loadDevices() || state.panel) return;
+  const a = document.activeElement && document.activeElement.dataset.act;
+  renderControls(); if (a) refocus(a);
+}, 15000);
 </script>
 </body>
 </html>

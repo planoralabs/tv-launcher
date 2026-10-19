@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">TV Launcher</string>
+    <string name="clock_overlay_description">Mostra hora e clima por cima de qualquer app ao apertar o botão escolhido, e aciona o Ambilight a partir da tela inicial. Só lê as telas de Ambilight da Philips.</string>
 </resources>

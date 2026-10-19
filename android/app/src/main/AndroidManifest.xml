@@ -3,6 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Nome da rede Wi-Fi conectada (o Android exige localização para isso). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <!-- Necessário para saber quais apps estão instalados e abri-los. -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
@@ -16,6 +22,9 @@
         android:banner="@drawable/banner"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
         android:usesCleartextTraffic="false">
+
+        <!-- Biblioteca da MediaTek (configurações da TV, como o Ambilight). Opcional: só existe nessas TVs. -->
+        <uses-library android:name="com.mediatek.twoworlds.tv" android:required="false" />
 
         <activity
             android:name=".MainActivity"
@@ -37,5 +46,18 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".overlay.ClockOverlayService"
+            android:exported="false"
+            android:label="TV Launcher: relógio e Ambilight"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/clock_overlay_service" />
+        </service>
     </application>
 </manifest>

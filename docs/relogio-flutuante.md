@@ -4,7 +4,7 @@ Barra semitransparente com hora, data e temperatura que aparece **por cima de qu
 
 No protótipo HTML ela é simulada com a tecla **H**. As opções ficam em **Personalizar → Relógio flutuante**.
 
-> Status: planejado. O código abaixo é a referência para a etapa do app Android e ainda não foi compilado nem testado na TV.
+> Status: implementado em `android/app/src/main/java/com/planoralabs/tvlauncher/overlay/ClockOverlayService.kt` (o mesmo serviço também aciona o Ambilight). O código abaixo foi o esboço inicial; o arquivo real é a referência.
 
 ---
 

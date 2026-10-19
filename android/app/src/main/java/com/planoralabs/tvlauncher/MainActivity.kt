@@ -2,6 +2,8 @@ package com.planoralabs.tvlauncher
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.bluetooth.BluetoothClass
+import android.bluetooth.BluetoothManager
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
@@ -11,6 +13,9 @@ import android.graphics.Paint
 import android.media.tv.TvContract
 import android.media.tv.TvInputInfo
 import android.media.tv.TvInputManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Base64
@@ -19,6 +24,7 @@ import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.planoralabs.tvlauncher.overlay.ClockOverlayService
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -175,11 +181,15 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun fetch(id: Int, url: String) = get(id, url, null)
 
+        /** POST com corpo JSON (consulta do JustWatch). */
+        @JavascriptInterface
+        fun fetchPost(id: Int, url: String, json: String) = get(id, url, null, json)
+
         /** O mesmo, com "Authorization: Bearer" (token de leitura do TMDB). */
         @JavascriptInterface
         fun fetchAuth(id: Int, url: String, token: String) = get(id, url, token)
 
-        private fun get(id: Int, url: String, token: String?) {
+        private fun get(id: Int, url: String, token: String?, post: String? = null) {
             thread {
                 val (ok, body) = try {
                     require(url.startsWith("https://")) { "só https" }
@@ -187,6 +197,11 @@ class MainActivity : Activity() {
                     c.connectTimeout = 8000; c.readTimeout = 12000
                     c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android TV) TVLauncher")
                     if (token != null) c.setRequestProperty("Authorization", "Bearer $token")
+                    if (post != null) {
+                        c.requestMethod = "POST"; c.doOutput = true
+                        c.setRequestProperty("Content-Type", "application/json")
+                        c.outputStream.use { it.write(post.toByteArray()) }
+                    }
                     val code = c.responseCode
                     val text = (if (code < 400) c.inputStream else c.errorStream)?.bufferedReader()?.readText() ?: ""
                     (code < 400) to (if (code < 400) text else "HTTP $code")
@@ -197,6 +212,119 @@ class MainActivity : Activity() {
             }
         }
 
+        // MARK: Bluetooth
+
+        /** Dispositivos pareados: {on, devices: [{name, kind, connected}]}. */
+        @SuppressLint("MissingPermission")
+        @JavascriptInterface
+        fun btDevices(): String {
+            val ad = getSystemService(BluetoothManager::class.java)?.adapter ?: return """{"on":false,"devices":[]}"""
+            val arr = JSONArray()
+            try {
+                ad.bondedDevices?.sortedBy { it.name ?: "" }?.forEach { d ->
+                    val connected = try { d.javaClass.getMethod("isConnected").invoke(d) as Boolean } catch (e: Exception) { false }
+                    val kind = when (d.bluetoothClass?.majorDeviceClass) {
+                        BluetoothClass.Device.Major.AUDIO_VIDEO -> "audio"
+                        BluetoothClass.Device.Major.PERIPHERAL -> "input"
+                        BluetoothClass.Device.Major.PHONE -> "phone"
+                        BluetoothClass.Device.Major.COMPUTER -> "computer"
+                        else -> "other"
+                    }
+                    arr.put(JSONObject().put("name", d.name ?: d.address).put("kind", kind).put("connected", connected))
+                }
+            } catch (e: SecurityException) { }
+            return JSONObject().put("on", ad.isEnabled).put("devices", arr).toString()
+        }
+
+        /** Tela do sistema para parear um novo controle, fone, teclado… */
+        @JavascriptInterface
+        fun btPair(): Boolean = launch(Intent("com.google.android.intent.action.CONNECT_INPUT"))
+            || launch(Intent().setClassName("com.android.tv.settings", "com.android.tv.settings.accessories.AddAccessoryActivity"))
+
+        // MARK: Entradas e rede
+
+        /** Entradas HDMI que a TV tem: [{id, label, device, state, hidden}]. state: 0 conectado, 1 em espera, 2 sem cabo. */
+        @JavascriptInterface
+        fun inputs(): String {
+            val tim = getSystemService(TvInputManager::class.java) ?: return "[]"
+            val all = tim.tvInputList
+            val arr = JSONArray()
+            hdmiInputs().forEachIndexed { i, inp ->
+                val device = all.firstOrNull { it.parentId == inp.id }?.loadLabel(this@MainActivity)?.toString() ?: ""
+                val state = try { tim.getInputState(inp.id) } catch (e: Exception) { -1 }
+                arr.put(JSONObject().put("id", "hdmi${i + 1}").put("label", inp.loadLabel(this@MainActivity).toString())
+                    .put("custom", inp.loadCustomLabel(this@MainActivity)?.toString() ?: "")
+                    .put("device", device).put("state", state).put("hidden", inp.isHidden(this@MainActivity)))
+            }
+            return arr.toString()
+        }
+
+        /** Conexão atual: {type: ethernet|wifi|none, name, internet, ip}. */
+        @Suppress("DEPRECATION")
+        @SuppressLint("MissingPermission")
+        @JavascriptInterface
+        fun network(): String {
+            val cm = getSystemService(ConnectivityManager::class.java)
+            val net = cm.activeNetwork
+            val caps = net?.let { cm.getNetworkCapabilities(it) }
+            val o = JSONObject()
+            when {
+                caps == null -> o.put("type", "none")
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> o.put("type", "ethernet")
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
+                    o.put("type", "wifi")
+                    val ssid = getSystemService(WifiManager::class.java)?.connectionInfo?.ssid?.trim('"')
+                    if (ssid != null && ssid != "<unknown ssid>") o.put("name", ssid)
+                }
+                else -> o.put("type", "other")
+            }
+            o.put("internet", caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true)
+            net?.let { cm.getLinkProperties(it) }?.linkAddresses
+                ?.firstOrNull { it.address is java.net.Inet4Address }?.let { o.put("ip", it.address.hostAddress) }
+            return o.toString()
+        }
+
+        // MARK: Relógio flutuante e Ambilight (serviço de acessibilidade)
+
+        private val service get() = ClockOverlayService.instance
+        private val prefs get() = getSharedPreferences("tvl", MODE_PRIVATE)
+
+        /** O serviço está ligado nas configurações de acessibilidade? */
+        @JavascriptInterface
+        fun serviceOn(): Boolean = service != null
+
+        /** Opções do relógio flutuante vindas do Personalizar (posição, tempo, temperatura…). */
+        @JavascriptInterface
+        fun setOsd(json: String) { prefs.edit().putString("osd_cfg", json).apply() }
+
+        /** Começa ou cancela a escolha do botão: a próxima tecla apertada vira o gatilho. */
+        @JavascriptInterface
+        fun osdCapture(start: Boolean) { prefs.edit().putBoolean("osd_capturing", start).apply() }
+
+        /** {code, name, capturing}: botão escolhido (name é o KEYCODE sem o prefixo). */
+        @JavascriptInterface
+        fun osdKey(): String {
+            val code = prefs.getInt("osd_key", 0)
+            return JSONObject().put("code", code)
+                .put("name", if (code == 0) "" else KeyEvent.keyCodeToString(code).removePrefix("KEYCODE_"))
+                .put("capturing", prefs.getBoolean("osd_capturing", false)).toString()
+        }
+
+        @JavascriptInterface
+        fun osdTest(): Boolean = service?.test() != null
+
+        /** Último estado conhecido do Ambilight (sem abrir o menu). */
+        @JavascriptInterface
+        fun ambiState(): String = prefs.getString("ambi", "{}")!!
+
+        /** Executa no menu oficial e responde com tvAmbiDone(estado). */
+        @JavascriptInterface
+        fun ambi(cmd: String): Boolean {
+            val s = service ?: return false
+            s.ambilight(cmd) { r -> js("window.tvAmbiDone && tvAmbiDone($r)") }
+            return true
+        }
+
         @JavascriptInterface
         fun tmdbKey(): String = BuildConfig.TMDB_KEY
 
@@ -205,6 +333,14 @@ class MainActivity : Activity() {
         fun openAmbilight(kind: String): Boolean = launch(Intent(
             if (kind == "osd") "org.droidtv.ambilight.AMBILIGHTOSD" else "org.droidtv.ambilight.AMBILIGHTSTYLE"
         ))
+
+        /** Abre o título direto no app (link do próprio serviço); se o app não aceitar, abre o app. */
+        @JavascriptInterface
+        fun openTitle(url: String, id: String): Boolean {
+            val pkg = appPackage(id) ?: return false
+            val view = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).setPackage(pkg)
+            return (view.resolveActivity(packageManager) != null && launch(view)) || launch(launchIntent(pkg))
+        }
 
         @JavascriptInterface
         fun openApp(id: String): Boolean {
@@ -224,8 +360,9 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun openSettings(kind: String): Boolean {
             val action = when (kind) {
-                "bt" -> Settings.ACTION_BLUETOOTH_SETTINGS
                 "audio" -> Settings.ACTION_SOUND_SETTINGS
+                "net" -> Settings.ACTION_WIFI_SETTINGS
+                "a11y" -> Settings.ACTION_ACCESSIBILITY_SETTINGS
                 else -> Settings.ACTION_SETTINGS
             }
             return launch(Intent(action)) || launch(Intent(Settings.ACTION_SETTINGS))
