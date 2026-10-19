@@ -8,15 +8,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Bebas+Neue&family=Pacifico&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
-:root { --ease: cubic-bezier(.2,.8,.2,1); --gl: transparent; --gt: transparent; --gr: transparent; --gb: transparent; }
+:root { --ease: cubic-bezier(.2,.8,.2,1); --gl: transparent; --gt: transparent; --gr: transparent; --gb: transparent; --accent: #0a84ff; }
 :root[data-theme="light"] {
   --bg1:#f4f6fa; --bg2:#dce2eb; --blob1:#c6d6f2; --blob2:#f3dac6; --blob3:#d4eaee;
   --text:#1d1d1f; --text2:#6e6e73; --text3:#a1a1a6;
   --glass:rgba(255,255,255,.5); --stroke:rgba(255,255,255,.8);
   --tile:rgba(255,255,255,.6); --tile-focus:#fff;
   --shadow:rgba(40,52,80,.16); --shadow-strong:rgba(30,40,70,.34);
-  --panel:rgba(246,247,250,.9); --scrim:rgba(20,24,32,.3);
-  --pos:#1f9d55; --accent:#0a84ff; --invert:#fff;
+  --panel:rgba(246,247,250,.92); --scrim:rgba(20,24,32,.3);
+  --pos:#1f9d55; --invert:#fff;
 }
 :root[data-theme="dark"] {
   --bg1:#0d0e13; --bg2:#171922; --blob1:#1b2745; --blob2:#33202d; --blob3:#0f2a2b;
@@ -24,8 +24,8 @@
   --glass:rgba(255,255,255,.06); --stroke:rgba(255,255,255,.08);
   --tile:rgba(255,255,255,.08); --tile-focus:rgba(255,255,255,.24);
   --shadow:rgba(0,0,0,.45); --shadow-strong:rgba(0,0,0,.75);
-  --panel:rgba(30,31,38,.92); --scrim:rgba(0,0,0,.5);
-  --pos:#30d158; --accent:#0a84ff; --invert:#111;
+  --panel:rgba(30,31,38,.94); --scrim:rgba(0,0,0,.5);
+  --pos:#30d158; --invert:#111;
 }
 
 * { box-sizing: border-box; }
@@ -71,19 +71,26 @@ body.noframe #glow, body.noframe #hint { display: none; }
 }
 body.noframe #stage { box-shadow: none; border-radius: 0; }
 .screen { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(160deg, var(--bg1), var(--bg2)); transition: background .6s; }
-.blobs i { position: absolute; border-radius: 50%; filter: blur(150px); transition: background .6s; }
+.blobs i { position: absolute; border-radius: 50%; filter: blur(150px); transition: background .6s, opacity .6s; }
 .blobs .b1 { width: 900px; height: 700px; left: -200px; top: -250px; background: var(--blob1); }
 .blobs .b2 { width: 800px; height: 700px; right: -200px; top: 200px; background: var(--blob2); }
 .blobs .b3 { width: 900px; height: 600px; left: 500px; bottom: -350px; background: var(--blob3); }
+.screen[data-bg="liso"] .blobs { display: none; }
+.screen[data-bg="vivo"] .blobs i { filter: blur(110px); }
+.screen[data-bg="vivo"] .blobs .b3 { background: color-mix(in srgb, var(--accent) 55%, transparent); }
+.screen[data-bg="vivo"] .blobs .b1 { background: color-mix(in srgb, var(--accent) 30%, var(--blob1)); }
 
 #content { position: relative; padding: 76px 120px 0; transition: transform .6s var(--ease); }
-#content [data-page] { transition: opacity .5s; }
-#content[data-page-now="1"] [data-page="0"], #content[data-page-now="0"] [data-page="1"] { opacity: 0; }
+#header, .block { transition: opacity .45s; }
+.off { opacity: 0; }
+.block + .block { margin-top: 40px; }
+#header + #blocks > .block:first-child { margin-top: 0; }
 
 .f { outline: none; transition: transform .28s var(--ease), box-shadow .28s var(--ease), background .2s, color .2s, opacity .2s; }
+html[data-motion="reduzidas"] .f, html[data-motion="reduzidas"] #content { transition-duration: .08s; }
 
 /* Cabeçalho */
-.top { display: flex; justify-content: space-between; align-items: flex-start; height: 176px; }
+#header { display: flex; justify-content: space-between; align-items: flex-start; min-height: 176px; }
 h1 { font-size: 78px; font-weight: 700; letter-spacing: -.025em; margin: 0; line-height: 1; }
 .tabs { display: flex; gap: 6px; margin: 22px 0 0 -18px; }
 .tab { font-size: 28px; font-weight: 500; color: var(--text2); padding: 10px 20px; border-radius: 999px; background: transparent; border: 0; }
@@ -132,21 +139,30 @@ h1 { font-size: 78px; font-weight: 700; letter-spacing: -.025em; margin: 0; line
 .cap b { font-size: 28px; font-weight: 600; letter-spacing: -.01em; }
 .cap small { display: block; font-size: 22px; color: var(--text2); margin-top: 6px; }
 
-/* Dock de apps */
+/* Barra de apps */
 .dock {
-  margin-top: 26px; padding: 28px 30px; border-radius: 46px; display: flex; gap: 24px;
+  padding: 12px 0; border-radius: 46px;
   background: var(--glass); border: 1px solid var(--stroke);
   backdrop-filter: blur(30px) saturate(1.5); box-shadow: 0 24px 50px -24px var(--shadow);
 }
+.dock-vp { overflow: hidden; padding: 16px 30px; --fl: 0px; --fr: 0px; }
+.dock-vp.more-l { --fl: 110px; }
+.dock-vp.more-r { --fr: 110px; }
+.dock-vp.more-l, .dock-vp.more-r {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--fl), #000 calc(100% - var(--fr)), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 var(--fl), #000 calc(100% - var(--fr)), transparent);
+}
+.dock-track { position: relative; display: flex; gap: 24px; transition: transform .45s var(--ease); }
+html[data-motion="reduzidas"] .dock-track { transition-duration: .1s; }
 .tile {
-  width: 181px; height: 110px; border: 0; border-radius: 24px; position: relative; overflow: hidden;
+  width: 181px; height: 110px; flex: none; border: 0; border-radius: 24px; position: relative; overflow: hidden;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   box-shadow: 0 10px 24px -12px rgba(0,0,0,.4);
 }
 .tile:focus { transform: scale(1.13) translateY(-6px); box-shadow: 0 30px 50px -14px var(--shadow-strong); z-index: 2; }
 .tile:focus::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255,255,255,.35), transparent 42%); }
 .a-tv { background: linear-gradient(160deg, #474c59, #1c1f26); color: #fff; font-size: 23px; font-weight: 700; letter-spacing: -.01em; }
-.a-tv svg { width: 30px; height: 30px; }
+.a-tv svg, .a-br svg { width: 30px; height: 30px; }
 .a-yt { background: #fff; color: #0f0f0f; gap: 6px; }
 .yt-play { width: 40px; height: 28px; background: #ff0033; border-radius: 8px; position: relative; }
 .yt-play::after { content: ""; position: absolute; left: 16px; top: 7px; border-left: 11px solid #fff; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
@@ -166,9 +182,18 @@ h1 { font-size: 78px; font-weight: 700; letter-spacing: -.025em; margin: 0; line
 .a-atv svg { width: 36px; height: 36px; fill: #fff; margin-bottom: 7px; }
 .a-dis { background: linear-gradient(160deg, #0a1a5c, #1c3e9e); color: #fff; font: 400 34px Pacifico, cursive; }
 .a-dis sup { font-family: Inter, sans-serif; font-weight: 500; font-size: 26px; margin-left: 2px; }
+.a-glb { background: linear-gradient(135deg, #ff6a3d, #ef1d3a); color: #fff; font-size: 27px; font-weight: 700; letter-spacing: -.04em; }
+.a-sp { background: #121212; color: #fff; font-size: 25px; font-weight: 700; letter-spacing: -.03em; }
+.sp-dot { width: 30px; height: 30px; border-radius: 50%; background: #1ed760; flex: none; }
+.a-tw { background: #9146ff; color: #fff; font-size: 32px; font-weight: 800; letter-spacing: -.03em; }
+.a-px { background: #1f1f1f; color: #fff; font-size: 38px; font-weight: 700; letter-spacing: -.03em; }
+.a-px b { color: #e5a00d; }
+.a-ko { background: linear-gradient(160deg, #17b2e7, #0f6fa8); color: #fff; font-size: 32px; font-weight: 800; letter-spacing: .08em; }
+.a-br { background: linear-gradient(160deg, #4a5466, #2a303b); color: #fff; font-size: 22px; font-weight: 600; }
+.a-ps { background: #fff; color: #01875f; font-size: 24px; font-weight: 700; letter-spacing: -.02em; }
 
 /* Entradas e atalhos */
-.row2 { display: flex; gap: 48px; margin-top: 56px; }
+.row2 { display: flex; gap: 48px; }
 .group h3 { margin: 0 0 16px 6px; font-size: 24px; font-weight: 500; color: var(--text2); }
 .chips { display: flex; gap: 16px; }
 .chip {
@@ -177,19 +202,21 @@ h1 { font-size: 78px; font-weight: 700; letter-spacing: -.025em; margin: 0; line
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px;
   font-size: 21px; font-weight: 500; box-shadow: 0 10px 24px -16px var(--shadow);
 }
+.chip span { max-width: 132px; text-align: center; line-height: 1.15; }
 .chip svg { width: 32px; height: 32px; }
 .chip small { font-size: 15px; color: var(--text2); margin-top: -7px; }
 .chip.dim { opacity: .42; }
-.chip.active::before { content: ""; position: absolute; top: 13px; right: 14px; width: 10px; height: 10px; border-radius: 50%; background: var(--pos); box-shadow: 0 0 12px var(--pos); }
+.chip.active::before { content: ""; position: absolute; top: 13px; right: 14px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
 .chip:focus { transform: scale(1.12) translateY(-4px); background: var(--tile-focus); opacity: 1; box-shadow: 0 26px 44px -14px var(--shadow-strong); z-index: 2; }
 
 /* Widgets */
-.widgets { display: grid; grid-template-columns: 640px 1fr 1fr; gap: 24px; margin-top: 44px; }
+.widgets { display: flex; gap: 24px; }
 .widget {
-  height: 330px; border-radius: 38px; padding: 30px 34px; text-align: left; color: var(--text);
+  flex: 1; min-width: 0; height: 330px; border-radius: 38px; padding: 30px 34px; text-align: left; color: var(--text);
   background: var(--glass); border: 1px solid var(--stroke);
   backdrop-filter: blur(30px) saturate(1.4); box-shadow: 0 24px 50px -24px var(--shadow);
 }
+.widget.weather { flex: 1.3; }
 button.widget:focus { transform: scale(1.035); background: var(--tile-focus); box-shadow: 0 34px 60px -20px var(--shadow-strong); z-index: 2; }
 .w-head { display: flex; justify-content: space-between; align-items: center; font-size: 22px; font-weight: 500; color: var(--text2); }
 .pill { font-size: 16px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--tile); color: var(--text2); border: 1px solid var(--stroke); }
@@ -224,7 +251,7 @@ button.widget:focus { transform: scale(1.035); background: var(--tile-focus); bo
 .bar i.on { background: var(--text); opacity: 1; }
 .modes { display: flex; flex-wrap: wrap; gap: 10px; }
 .mode { font-size: 18px; font-weight: 500; padding: 10px 17px; border-radius: 999px; border: 1px solid var(--stroke); background: var(--tile); color: var(--text); }
-.mode.on { background: var(--text); color: var(--invert); border-color: transparent; }
+.mode.on { background: var(--accent); color: #fff; border-color: transparent; }
 .mode:focus { transform: scale(1.12); box-shadow: 0 14px 26px -10px var(--shadow-strong); }
 .mode:not(.on):focus { background: var(--tile-focus); }
 
@@ -247,31 +274,99 @@ button.widget:focus { transform: scale(1.035); background: var(--tile-focus); bo
 }
 #overlay.open .panel { transform: none; }
 .panel h2 { margin: 0; font-size: 46px; font-weight: 700; letter-spacing: -.02em; }
-.panel > p { margin: 8px 0 26px; font-size: 22px; color: var(--text2); }
-.sec { font-size: 19px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin: 22px 0 10px 24px; }
+.panel p.sub { margin: 8px 0 26px; font-size: 22px; color: var(--text2); }
+.sec { font-size: 19px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin: 26px 0 10px 24px; }
+.sec:first-child { margin-top: 4px; }
+.note { font-size: 19px; color: var(--text2); margin: 0 24px 14px; line-height: 1.4; }
 .row {
-  width: 100%; height: 92px; border: 0; border-radius: 24px; background: transparent; color: var(--text);
-  display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 18px; padding: 0 24px; text-align: left;
+  width: 100%; min-height: 92px; border: 0; border-radius: 24px; background: transparent; color: var(--text);
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 18px; padding: 10px 24px; text-align: left;
 }
-.row + .row { margin-top: 4px; }
-.row:focus { background: var(--tile-focus); transform: scale(1.025); box-shadow: 0 18px 34px -16px var(--shadow-strong); }
+.row + .row, .rw + .row, .row + .rw, .rw + .rw { margin-top: 4px; }
+.row:focus { background: var(--tile-focus); transform: scale(1.02); box-shadow: 0 18px 34px -16px var(--shadow-strong); }
 .row .ico { width: 56px; height: 56px; border-radius: 16px; background: var(--tile); display: grid; place-items: center; }
 .row .ico svg { width: 28px; height: 28px; }
+.row .ico.bare { width: auto; height: auto; background: none; border-radius: 0; }
 .row b { display: block; font-size: 25px; font-weight: 600; }
 .row small { display: block; font-size: 18px; color: var(--text2); margin-top: 3px; }
+.row.hidden-item b { color: var(--text3); }
+.row.hidden-item .ico { opacity: .45; }
+.row.danger b { color: #ff453a; }
+.row.lifted { background: var(--tile-focus); box-shadow: 0 0 0 3px var(--accent), 0 24px 44px -16px var(--shadow-strong); transform: scale(1.04); }
 .end-t { font-size: 20px; color: var(--text2); }
 .end-t.pos { color: var(--pos); font-weight: 600; }
+.val { font-size: 21px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.grip { display: flex; align-items: center; gap: 8px; font-size: 18px; color: var(--text3); white-space: nowrap; }
+.grip svg { width: 24px; height: 24px; }
+.row.lifted .grip { color: var(--accent); font-weight: 600; }
 .radio { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--text3); display: grid; place-items: center; }
 .radio.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .radio svg { width: 20px; height: 20px; }
-.switch { width: 64px; height: 38px; border-radius: 999px; background: var(--text3); position: relative; transition: background .25s; }
+.switch { display: block; width: 64px; height: 38px; border-radius: 999px; background: var(--text3); position: relative; transition: background .25s; }
 .switch i { position: absolute; left: 4px; top: 4px; width: 30px; height: 30px; border-radius: 50%; background: #fff; transition: transform .25s var(--ease); box-shadow: 0 2px 6px rgba(0,0,0,.3); }
-.switch.on { background: var(--pos); }
+.switch.on { background: var(--accent); }
 .switch.on i { transform: translateX(26px); }
-.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.rw { display: flex; gap: 10px; align-items: center; }
+.rw .row { flex: 1; }
+.sw { height: 92px; width: 104px; flex: none; border: 0; border-radius: 24px; background: transparent; display: grid; place-items: center; }
+.sw:focus { background: var(--tile-focus); transform: scale(1.05); box-shadow: 0 18px 34px -16px var(--shadow-strong); }
+.mt { display: block; width: 66px; height: 40px; border-radius: 9px; overflow: hidden; position: relative; }
+.mt .tile { position: absolute; left: 0; top: 0; transform: scale(.365); transform-origin: 0 0; box-shadow: none; }
+.mt.big { width: 145px; height: 88px; border-radius: 19px; }
+.mt.big .tile { transform: scale(.8); }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .gapp { border: 0; background: transparent; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 0; border-radius: 26px; font-size: 20px; font-weight: 500; }
-.gapp .mono { width: 110px; height: 80px; border-radius: 20px; display: grid; place-items: center; color: #fff; font-size: 34px; font-weight: 700; }
 .gapp:focus { background: var(--tile-focus); transform: scale(1.06); box-shadow: 0 18px 34px -16px var(--shadow-strong); }
+
+/* Painel Personalizar */
+.panel.wide { width: 1560px; height: 920px; max-height: none; padding: 0; display: grid; grid-template-columns: 380px 1fr; overflow: hidden; }
+.side { padding: 48px 26px 48px 36px; border-right: 1px solid var(--stroke); display: flex; flex-direction: column; gap: 6px; }
+.side h2 { margin-left: 18px; }
+.side p.sub { margin: 6px 0 22px 18px; }
+.cat { display: flex; align-items: center; gap: 16px; height: 70px; padding: 0 18px; border: 0; border-radius: 20px; background: transparent; color: var(--text2); font-size: 24px; font-weight: 500; text-align: left; }
+.cat svg { width: 28px; height: 28px; flex: none; }
+.cat.active { color: var(--text); background: var(--tile); }
+.cat:focus { background: var(--tile-focus); color: var(--text); transform: scale(1.03); box-shadow: 0 16px 30px -14px var(--shadow-strong); }
+.main { display: flex; flex-direction: column; min-height: 0; padding: 48px 44px 0; }
+.main h2 { margin-left: 24px; font-size: 40px; }
+.main p.sub { margin: 6px 0 16px 24px; }
+.pscroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; position: relative; padding: 10px 18px 48px; margin: 0 -18px; scroll-behavior: smooth; }
+.pscroll::-webkit-scrollbar { display: none; }
+
+/* App aberto (simulação) */
+#appview {
+  position: absolute; inset: 0; z-index: 15; background: #000; color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px;
+  opacity: 0; pointer-events: none; transition: opacity .35s;
+}
+#appview.open { opacity: 1; pointer-events: auto; }
+.av-logo { height: 340px; display: grid; place-items: center; }
+.av-logo .tile { transform: scale(2.4); box-shadow: 0 30px 120px -20px rgba(255,255,255,.12); }
+.av-txt { text-align: center; font-size: 24px; color: rgba(255,255,255,.5); line-height: 1.6; }
+.av-txt b { display: block; font-size: 36px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+.av-txt kbd { font-family: inherit; font-size: 21px; padding: 2px 12px; border-radius: 8px; background: rgba(255,255,255,.14); color: #fff; }
+
+/* Relógio flutuante (tecla H) */
+#osd {
+  position: absolute; left: 50%; bottom: 56px; z-index: 40; display: flex; align-items: center; gap: 36px;
+  padding: 24px 48px 28px; border-radius: 40px; color: #fff; white-space: nowrap;
+  background: rgba(14,15,20,.6); backdrop-filter: blur(26px) saturate(1.4); border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 30px 60px -20px rgba(0,0,0,.6);
+  opacity: 0; transform: translate(-50%, 40px); transition: opacity .35s, transform .45s var(--ease); pointer-events: none;
+}
+#osd.top { bottom: auto; top: 56px; transform: translate(-50%, -40px); }
+#osd.show { opacity: 1; transform: translate(-50%, 0); }
+.osd-clock { display: flex; flex-direction: column; }
+.osd-time { font-size: 68px; font-weight: 600; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.osd-clock small { font-size: 22px; color: rgba(255,255,255,.65); margin-top: 8px; }
+.osd-clock small::first-letter { text-transform: uppercase; }
+.osd-sep { width: 1px; height: 70px; background: rgba(255,255,255,.2); }
+.osd-w { display: flex; align-items: center; gap: 16px; color: rgba(255,255,255,.8); }
+.osd-w svg { width: 56px; height: 56px; }
+.osd-w b { display: block; font-size: 46px; font-weight: 500; color: #fff; line-height: 1; }
+.osd-w small { display: block; font-size: 20px; color: rgba(255,255,255,.65); margin-top: 6px; }
+.osd-prog { position: absolute; left: 48px; right: 48px; bottom: 10px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.3); transform-origin: left; }
+@keyframes osdprog { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 
 #toast {
   position: absolute; left: 50%; bottom: 64px; z-index: 30; transform: translate(-50%, 30px); opacity: 0;
@@ -288,10 +383,10 @@ button.widget:focus { transform: scale(1.035); background: var(--tile-focus); bo
 <div id="stage">
   <div class="screen">
     <div class="blobs"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
-    <div id="content" data-page-now="0">
-      <header class="top" data-page="0">
+    <div id="content">
+      <header id="header">
         <div>
-          <h1>Para você</h1>
+          <h1 id="title">Para você</h1>
           <nav class="tabs" id="tabs"></nav>
         </div>
         <div class="right">
@@ -299,31 +394,16 @@ button.widget:focus { transform: scale(1.035); background: var(--tile-focus); bo
           <div class="status"><span class="wmini" id="wMini"></span><span id="date"></span><span class="clock" id="clock"></span></div>
         </div>
       </header>
-
-      <section class="hero" id="hero" data-page="0"></section>
-
-      <section class="dock" id="dock"></section>
-
-      <section class="row2" data-page="1">
-        <div class="group"><h3>Entradas</h3><div class="chips" id="inputs"></div></div>
-        <div class="group"><h3>Atalhos</h3><div class="chips" id="shortcuts"></div></div>
-      </section>
-
-      <section class="widgets" data-page="1">
-        <button class="widget weather f" data-act="weather" id="weather"></button>
-        <div class="widget" id="ambi"></div>
-        <button class="widget f" data-act="news">
-          <div class="w-head"><span>Notícias</span><span class="pill">Simulado</span></div>
-          <div id="newsList"></div>
-        </button>
-      </section>
+      <div id="blocks"></div>
     </div>
   </div>
+  <div id="appview"></div>
   <div id="overlay"></div>
   <div id="toast"></div>
+  <div id="osd"></div>
 </div>
 
-<div id="hint"><kbd>← ↑ → ↓</kbd> navegar <kbd>Enter</kbd> selecionar <kbd>Esc</kbd> voltar <kbd>T</kbd> tema <kbd>F</kbd> moldura &nbsp;·&nbsp; conteúdo, clima e notícias simulados</div>
+<div id="hint"><kbd>← ↑ → ↓</kbd> navegar <kbd>Enter</kbd> selecionar <kbd>Esc</kbd> voltar <kbd>H</kbd> relógio <kbd>T</kbd> tema <kbd>F</kbd> moldura &nbsp;·&nbsp; conteúdo, clima e notícias simulados</div>
 
 <script>
 const $ = s => document.querySelector(s);
@@ -331,6 +411,8 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem('tvl.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('tvl.' + k, JSON.stringify(v)); } catch (e) {} }
 };
+const clone = o => JSON.parse(JSON.stringify(o));
+const nextOf = (arr, cur) => arr[(arr.indexOf(cur) + 1) % arr.length];
 
 /* ---------- Ícones ---------- */
 const S = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
@@ -338,8 +420,10 @@ const ICON = {
   bt: S('<path d="M7 7l10 10-5 5V2l5 5L7 17"/>'),
   hdmi: S('<path d="M3 8h18v5l-3 3H6l-3-3z"/><path d="M8 11.5h8"/>'),
   tv: S('<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/>'),
+  monitor: S('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M9 20h6M12 16v4"/>'),
   antenna: S('<path d="M8 3l4 4.5L16 3"/><rect x="3" y="8" width="18" height="12" rx="2.5"/>'),
-  gear: S('<circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'),
+  gear: S('<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'),
+  sliders: S('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'),
   sun: S('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>'),
   moon: S('<path d="M19.5 14.5A7.5 7.5 0 1 1 9.5 4.5a6 6 0 0 0 10 10z"/>'),
   auto: S('<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>'),
@@ -353,7 +437,19 @@ const ICON = {
   search: S('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>'),
   check: S('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
   rise: S('<path d="M3 19h18M7 15a5 5 0 0 1 10 0M12 4v5M9.5 6.5L12 4l2.5 2.5"/>'),
-  set: S('<path d="M3 19h18M7 15a5 5 0 0 1 10 0M12 4v5M9.5 6.5L12 9l2.5-2.5"/>')
+  set: S('<path d="M3 19h18M7 15a5 5 0 0 1 10 0M12 4v5M9.5 6.5L12 9l2.5-2.5"/>'),
+  globe: S('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'),
+  palette: S('<path d="M12 21a9 9 0 1 1 9-9c0 2.2-1.8 3.5-3.6 3.5H15a2 2 0 0 0-1.5 3.3A1.4 1.4 0 0 1 12 21z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>'),
+  layout: S('<rect x="3" y="3" width="18" height="7" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  header: S('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h4"/>'),
+  widgets: S('<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="18" height="8" rx="2"/>'),
+  star: S('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'),
+  news: S('<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'),
+  grip: S('<path d="M8 6v.01M16 6v.01M8 12v.01M16 12v.01M8 18v.01M16 18v.01" stroke-width="3"/>'),
+  reset: S('<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/>'),
+  info: S('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'),
+  clock: S('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  remote: S('<rect x="7" y="2.5" width="10" height="19" rx="3"/><circle cx="12" cy="8" r="2"/><path d="M10 13.5h.01M14 13.5h.01M10 17h.01M14 17h.01"/>')
 };
 const W = {
   sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="#FFC53D"/><path stroke="#FFC53D" stroke-width="2" stroke-linecap="round" d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>',
@@ -388,7 +484,7 @@ const SILS = [
   ['M0 30V12h8v-6h6v10h8V4h7v12h9V9h6v7h10V2h8v14h7V8h8v8h9V11h14v19z', 'M0 30V22h14v-4h10v5h16v-3h20v4h18v-6h22v12z']
 ];
 
-const APPS = [
+const ALL_APPS = [
   { id: 'tv', name: 'TV Aberta', cls: 'a-tv', html: `${ICON.antenna}<span>TV Aberta</span>` },
   { id: 'yt', name: 'YouTube', cls: 'a-yt', html: '<span class="yt-play"></span><span class="yt-t">YouTube</span>' },
   { id: 'prime', name: 'Prime Video', cls: 'a-prime', html: '<span class="pv"><span>prime video</span><svg viewBox="0 0 92 14"><path d="M6 3Q46 15 84 4"/><path d="M78 1.5l7 2.5-4 6"/></svg></span>' },
@@ -396,31 +492,43 @@ const APPS = [
   { id: 'hbo', name: 'HBO Max', cls: 'a-hbo', html: '<span class="hbo"><b>HBO</b><i>max</i></span>' },
   { id: 'crunchy', name: 'Crunchyroll', cls: 'a-cr', html: '<span class="cr-logo"></span><span>crunchyroll</span>' },
   { id: 'appletv', name: 'Apple TV', cls: 'a-atv', html: `${APPLE}<span>tv</span>` },
-  { id: 'disney', name: 'Disney+', cls: 'a-dis', html: '<span>Disney<sup>+</sup></span>' }
+  { id: 'disney', name: 'Disney+', cls: 'a-dis', html: '<span>Disney<sup>+</sup></span>' },
+  { id: 'globoplay', name: 'Globoplay', cls: 'a-glb', html: '<span>globoplay</span>' },
+  { id: 'spotify', name: 'Spotify', cls: 'a-sp', html: '<span class="sp-dot"></span><span>Spotify</span>' },
+  { id: 'twitch', name: 'Twitch', cls: 'a-tw', html: '<span>twitch</span>' },
+  { id: 'plex', name: 'Plex', cls: 'a-px', html: '<span>ple<b>x</b></span>' },
+  { id: 'kodi', name: 'Kodi', cls: 'a-ko', html: '<span>KODI</span>' },
+  { id: 'browser', name: 'Navegador', cls: 'a-br', html: `${ICON.globe}<span>Navegador</span>` },
+  { id: 'play', name: 'Play Store', cls: 'a-ps', html: '<span>Play Store</span>' }
 ];
-const INPUTS = [
-  { id: 'live', label: 'TV ao Vivo', icon: 'tv' },
-  { id: 'hdmi1', label: 'PS5', sub: 'HDMI 1', icon: 'game' },
-  { id: 'hdmi2', label: 'HDMI 2', icon: 'hdmi', dim: true },
-  { id: 'hdmi3', label: 'Soundbar', sub: 'HDMI 3 · ARC', icon: 'soundbar' },
-  { id: 'hdmi4', label: 'HDMI 4', icon: 'hdmi', dim: true }
-];
-const SHORTCUTS = [
-  { id: 'bt', label: 'Bluetooth', icon: 'bt' },
-  { id: 'audio', label: 'Saída de som', icon: 'speaker' },
-  { id: 'ambi', label: 'Ambilight', icon: 'ambi' },
-  { id: 'apps', label: 'Todos os apps', icon: 'grid' },
-  { id: 'sys', label: 'Ajustes da TV', icon: 'gear' }
-];
+const DOCK_VISIBLE = 8;
+const INPUT_IDS = ['live', 'hdmi1', 'hdmi2', 'hdmi3', 'hdmi4'];
+const NO_SIGNAL = ['hdmi2', 'hdmi4'];
+const NAME_PRESETS = ['', 'PS5', 'Xbox', 'Nintendo Switch', 'Soundbar', 'Apple TV', 'Chromecast', 'PC', 'Decodificador'];
+const NAME_ICON = { 'PS5': 'game', 'Xbox': 'game', 'Nintendo Switch': 'game', 'Soundbar': 'soundbar', 'Apple TV': 'tv', 'Chromecast': 'tv', 'PC': 'monitor', 'Decodificador': 'antenna' };
+const SHORTCUTS = {
+  bt: { label: 'Bluetooth', icon: 'bt' },
+  audio: { label: 'Saída de som', icon: 'speaker' },
+  ambi: { label: 'Ambilight', icon: 'ambi' },
+  apps: { label: 'Todos os apps', icon: 'grid' },
+  sys: { label: 'Ajustes da TV', icon: 'sliders' }
+};
+const BLOCKS = {
+  hero: { label: 'Destaques', sub: 'Filmes e séries em alta', icon: 'star' },
+  apps: { label: 'Barra de apps', sub: 'Rola para os lados quando há mais apps', icon: 'grid' },
+  controls: { label: 'Entradas e atalhos', sub: 'HDMI, Bluetooth, som e ajustes', icon: 'hdmi' },
+  widgets: { label: 'Widgets', sub: 'Clima, Ambilight e notícias', icon: 'widgets' }
+};
+const WIDGETS = {
+  weather: { label: 'Clima', sub: 'Agora e próximas horas', icon: 'sun' },
+  ambi: { label: 'Ambilight', sub: 'Modo e brilho', icon: 'ambi' },
+  news: { label: 'Notícias', sub: 'Manchetes rotativas', icon: 'news' }
+};
 const AMBI_MODES = [['video', 'Vídeo', 'Seguir vídeo'], ['audio', 'Áudio', 'Seguir áudio'], ['lounge', 'Lounge', 'Lounge'], ['fixa', 'Cor fixa', 'Cor fixa'], ['off', 'Desligar', 'Desligado']];
 const AUDIO = [
   { id: 'tv', label: 'Alto-falantes da TV', icon: 'speaker' },
   { id: 'arc', label: 'Soundbar', sub: 'HDMI 3 · ARC', icon: 'soundbar' },
   { id: 'airpods', label: 'AirPods Pro', sub: 'Bluetooth', icon: 'headphones' }
-];
-const MORE_APPS = [
-  ['Globoplay', '#ff4d2e'], ['Spotify', '#1db954'], ['Twitch', '#9146ff'], ['Plex', '#e5a00d'],
-  ['Kodi', '#17b2e7'], ['Navegador', '#5b6b7f'], ['Play Store', '#01875f'], ['Galeria', '#d64f8c']
 ];
 const NEWS = [
   { cat: 'Tecnologia', c: '#0a84ff', ago: 'há 12 min', t: 'Nova geração de painéis OLED promete o dobro de brilho com menos consumo de energia' },
@@ -430,12 +538,61 @@ const NEWS = [
   { cat: 'Cultura', c: '#ff9f0a', ago: 'há 1 h', t: 'Festival de cinema anuncia mostra gratuita com 40 filmes nacionais' },
   { cat: 'Economia', c: '#ff375f', ago: 'há 2 h', t: 'Uso de energia solar residencial cresce 18% no último ano, aponta pesquisa' },
   { cat: 'Tecnologia', c: '#0a84ff', ago: 'há 2 h', t: 'Apps de streaming ganham perfis infantis com limite de horário configurável' },
-  { cat: 'Esportes', c: '#34c759', ago: 'há 3 h', t: 'Final do campeonato estadual terá transmissão em TV aberta no domingo' }
+  { cat: 'Esportes', c: '#34c759', ago: 'há 3 h', t: 'Final do campeonato estadual terá transmissão em TV aberta no domingo' },
+  { cat: 'Ciência', c: '#af52de', ago: 'há 4 h', t: 'Pesquisadores brasileiros mapeiam 120 novas espécies de plantas no Cerrado' },
+  { cat: 'Cultura', c: '#ff9f0a', ago: 'há 5 h', t: 'Exposição interativa sobre a história dos videogames chega a cinco capitais' },
+  { cat: 'Economia', c: '#ff375f', ago: 'há 5 h', t: 'Pequenos negócios digitais lideram abertura de empresas no trimestre' },
+  { cat: 'Clima', c: '#30b0c7', ago: 'há 6 h', t: 'Fim de semana deve ter sol e temperaturas amenas na maior parte do país' }
 ];
-const CITY = 'São Paulo', SUNRISE = '05:42', SUNSET = '18:12';
+const CITIES = [['São Paulo', 0], ['Rio de Janeiro', 4], ['Belo Horizonte', 1], ['Brasília', 2], ['Salvador', 5], ['Recife', 6], ['Fortaleza', 7], ['Curitiba', -4], ['Porto Alegre', -2], ['Manaus', 9]];
+const SUNRISE = '05:42', SUNSET = '18:12';
+const CYCLES = {
+  accent: [['#0a84ff', 'Azul'], ['#30d158', 'Verde'], ['#ff9f0a', 'Laranja'], ['#ff375f', 'Rosa'], ['#bf5af2', 'Roxo'], ['#8e8e93', 'Grafite']],
+  bg: [['gradiente', 'Gradiente suave'], ['vivo', 'Vivo (cor de destaque)'], ['liso', 'Liso']],
+  motion: [['completas', 'Completas'], ['reduzidas', 'Reduzidas']],
+  title: [['para-voce', 'Para você'], ['saudacao', 'Saudação por horário'], ['inicio', 'Início'], ['nenhum', 'Sem título']],
+  startTab: TABS,
+  clock: [['24', '24 horas'], ['12', '12 horas']],
+  city: CITIES.map(([c]) => [c, c]),
+  unit: [['C', 'Celsius (°C)'], ['F', 'Fahrenheit (°F)']],
+  newsCat: [['Todas', 'Todas'], ['Tecnologia', 'Tecnologia'], ['Esportes', 'Esportes'], ['Clima', 'Clima'], ['Ciência', 'Ciência'], ['Cultura', 'Cultura'], ['Economia', 'Economia']],
+  newsSpeed: [[6, '6 segundos'], [9, '9 segundos'], [15, '15 segundos']],
+  osdDur: [[3, '3 segundos'], [5, '5 segundos'], [8, '8 segundos'], [12, '12 segundos']],
+  osdPos: [['inferior', 'Barra inferior'], ['superior', 'Barra superior']]
+};
+const labelOf = (key, v) => (CYCLES[key].find(o => o[0] === v) || [, v])[1];
+
+/* ---------- Configuração do launcher ---------- */
+const DEFAULT_CFG = {
+  blocks: Object.keys(BLOCKS).map(id => ({ id, on: true })),
+  apps: ALL_APPS.map((a, i) => ({ id: a.id, on: i < DOCK_VISIBLE })),
+  shortcuts: Object.keys(SHORTCUTS).map(id => ({ id, on: true })),
+  widgets: Object.keys(WIDGETS).map(id => ({ id, on: true })),
+  inputs: { live: { on: true, name: '' }, hdmi1: { on: true, name: 'PS5' }, hdmi2: { on: true, name: '' }, hdmi3: { on: true, name: 'Soundbar' }, hdmi4: { on: true, name: '' } },
+  showInputs: true, showShortcuts: true,
+  accent: '#0a84ff', bg: 'gradiente', motion: 'completas',
+  title: 'para-voce', showTabs: true, startTab: 'explorar',
+  clock: '24', showDate: true, showWeatherTop: true,
+  city: 'São Paulo', unit: 'C', newsCat: 'Todas', newsSpeed: 9,
+  osdDate: true, osdTemp: true, osdCity: true, osdDur: 5, osdPos: 'inferior'
+};
+function loadCfg() {
+  const s = store.get('cfg', {}) || {};
+  const c = Object.assign(clone(DEFAULT_CFG), s);
+  for (const k of ['blocks', 'apps', 'shortcuts', 'widgets']) {
+    const def = DEFAULT_CFG[k];
+    const cur = (Array.isArray(s[k]) ? s[k] : []).filter(x => def.some(d => d.id === x.id));
+    def.forEach(d => { if (!cur.some(x => x.id === d.id)) cur.push(clone(d)); });
+    c[k] = cur;
+  }
+  c.inputs = Object.assign(clone(DEFAULT_CFG.inputs), s.inputs || {});
+  return c;
+}
+let cfg = loadCfg();
+const saveCfg = () => store.set('cfg', cfg);
 
 const state = {
-  tab: 'explorar',
+  tab: cfg.startTab,
   theme: store.get('theme', 'auto'),
   frame: store.get('frame', true),
   input: store.get('input', 'hdmi1'),
@@ -446,27 +603,58 @@ const state = {
     { id: 'kb', name: 'Teclado K380', kind: 'Teclado', icon: 'keyboard', on: false }
   ]),
   audio: store.get('audio', 'tv'),
-  page: 0, panel: null, returnFocus: null
+  panel: null, returnAct: null, cat: 'aparencia', moving: null, confirmReset: false
 };
 const save = k => store.set(k, k === 'bt' ? state.bt.map(({ busy, ...d }) => d) : state[k]);
-let videoColors = CONTENT.explorar[0].c;
+let videoColors = CONTENT[state.tab][0].c;
+let scrollY = 0;
 
-/* ---------- Render ---------- */
-function renderTabs() {
+/* ---------- Render: cabeçalho ---------- */
+function greeting() {
+  const h = new Date().getHours();
+  return h < 5 ? 'Boa noite' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+}
+function renderHeader() {
+  const t = $('#title');
+  t.style.display = cfg.title === 'nenhum' ? 'none' : '';
+  t.textContent = { 'para-voce': 'Para você', saudacao: greeting(), inicio: 'Início', nenhum: '' }[cfg.title];
+  $('#tabs').style.display = cfg.showTabs ? '' : 'none';
   $('#tabs').innerHTML = TABS.map(([id, l]) => `<button class="tab f ${id === state.tab ? 'active' : ''}" data-act="tab:${id}">${l}</button>`).join('');
+  $('#date').style.display = cfg.showDate ? '' : 'none';
+  $('#wMini').style.display = cfg.showWeatherTop ? '' : 'none';
+  renderIcons();
 }
 function renderIcons() {
   const th = state.theme === 'auto' ? 'auto' : state.theme === 'dark' ? 'moon' : 'sun';
   $('#icons').innerHTML = [
     ['hdr:bt', ICON.bt, 'Bluetooth'], ['hdr:inputs', ICON.hdmi, 'Entradas'],
-    ['hdr:theme', ICON[th], 'Tema'], ['hdr:settings', ICON.gear, 'Ajustes']
+    ['hdr:theme', ICON[th], 'Tema'], ['hdr:settings', ICON.gear, 'Personalizar']
   ].map(([a, i, t]) => `<button class="ibtn f" data-act="${a}" title="${t}">${i}</button>`).join('');
+}
+
+/* ---------- Render: blocos ---------- */
+const BLOCK_HTML = {
+  hero: '<section class="block hero" id="hero"></section>',
+  apps: '<section class="block dock" id="dock"></section>',
+  controls: '<section class="block row2" id="controls"></section>',
+  widgets: '<section class="block widgets" id="widgets"></section>'
+};
+function blockHasContent(id) {
+  if (id === 'apps') return cfg.apps.some(a => a.on);
+  if (id === 'controls') return (cfg.showInputs && INPUT_IDS.some(i => cfg.inputs[i].on)) || (cfg.showShortcuts && cfg.shortcuts.some(s => s.on));
+  if (id === 'widgets') return cfg.widgets.some(w => w.on);
+  return true;
+}
+function renderBlocks() {
+  $('#blocks').innerHTML = cfg.blocks.filter(b => b.on && blockHasContent(b.id)).map(b => BLOCK_HTML[b.id]).join('');
+  renderHero(); renderDock(); renderControls(); renderWidgets();
 }
 function artStyle(c) {
   return `background: radial-gradient(circle at 72% 30%, ${c[2]} 0, ${c[2]}00 34%), radial-gradient(ellipse at 20% 100%, ${c[1]} 0, ${c[1]}00 60%), linear-gradient(150deg, ${c[0]}, ${c[1]})`;
 }
 function renderHero() {
-  $('#hero').innerHTML = CONTENT[state.tab].map((it, i) => `
+  const el = $('#hero'); if (!el) return;
+  el.innerHTML = CONTENT[state.tab].map((it, i) => `
     <div class="card ${i ? 'poster' : 'feature'}">
       <button class="art f" data-act="open:${i}" data-i="${i}" style="${artStyle(it.c)}">
         <svg class="sil s1" viewBox="0 0 100 30" preserveAspectRatio="none"><path d="${SILS[i][1]}"/></svg>
@@ -477,46 +665,100 @@ function renderHero() {
       <div class="cap"><b>${it.t}</b>${i === 0 ? `<small>${it.meta} · ${it.app}</small>` : `<small>${it.app}</small>`}</div>
     </div>`).join('');
 }
+const appById = id => ALL_APPS.find(a => a.id === id);
+const tileHtml = a => `<span class="tile ${a.cls}">${a.html}</span>`;
 function renderDock() {
-  $('#dock').innerHTML = APPS.map(a => `<button class="tile f ${a.cls}" data-act="app:${a.id}" title="${a.name}">${a.html}</button>`).join('');
+  const el = $('#dock'); if (!el) return;
+  el.innerHTML = `<div class="dock-vp"><div class="dock-track">${cfg.apps.filter(a => a.on).map(x => appById(x.id))
+    .map(a => `<button class="tile f ${a.cls}" data-act="app:${a.id}" title="${a.name}">${a.html}</button>`).join('')}</div></div>`;
+  dockX = 0; scrollDock(0);
+}
+/* Carrossel: rola a barra para manter o app em foco visível, deixando o vizinho aparecendo. */
+let dockX = 0;
+function scrollDock(x) {
+  const vp = $('#dock .dock-vp'); if (!vp) return;
+  const track = vp.firstChild, vis = vp.clientWidth - 60;
+  const max = Math.max(0, track.scrollWidth - vis);
+  dockX = Math.max(0, Math.min(x, max));
+  track.style.transform = `translateX(${-dockX}px)`;
+  vp.classList.toggle('more-l', dockX > 0);
+  vp.classList.toggle('more-r', dockX < max - 1);
+}
+function ensureDockTile(tile) {
+  const vp = tile.closest('.dock-vp'), vis = vp.clientWidth - 60, peek = 120;
+  const l = tile.offsetLeft, r = l + tile.offsetWidth;
+  if (l < dockX + peek) scrollDock(l - peek);
+  else if (r > dockX + vis - peek) scrollDock(r - vis + peek);
 }
 function chip(act, it, extra = '') {
   return `<button class="chip f ${extra}" data-act="${act}">${ICON[it.icon]}<span>${it.label}</span>${it.sub ? `<small>${it.sub}</small>` : ''}</button>`;
 }
+function inputInfo(id) {
+  if (id === 'live') return { label: 'TV ao Vivo', icon: 'tv' };
+  const n = cfg.inputs[id].name, port = 'HDMI ' + id.slice(4);
+  return n ? { label: n, sub: port, icon: NAME_ICON[n] || 'hdmi' } : { label: port, icon: 'hdmi' };
+}
+function renderControls() {
+  const el = $('#controls'); if (!el) return;
+  const showIn = cfg.showInputs && INPUT_IDS.some(i => cfg.inputs[i].on);
+  const showSc = cfg.showShortcuts && cfg.shortcuts.some(s => s.on);
+  el.innerHTML = (showIn ? '<div class="group"><h3>Entradas</h3><div class="chips" id="inputs"></div></div>' : '')
+    + (showSc ? '<div class="group"><h3>Atalhos</h3><div class="chips" id="shortcuts"></div></div>' : '');
+  renderInputs(); renderShortcuts();
+}
 function renderInputs() {
-  $('#inputs').innerHTML = INPUTS.map(it => chip('input:' + it.id, it, (it.id === state.input ? 'active ' : '') + (it.dim && it.id !== state.input ? 'dim' : ''))).join('');
+  const el = $('#inputs'); if (!el) return;
+  el.innerHTML = INPUT_IDS.filter(id => cfg.inputs[id].on).map(id => {
+    const cls = (id === state.input ? 'active ' : '') + (NO_SIGNAL.includes(id) && id !== state.input ? 'dim' : '');
+    return chip('input:' + id, inputInfo(id), cls);
+  }).join('');
 }
 function renderShortcuts() {
-  $('#shortcuts').innerHTML = SHORTCUTS.map(it => chip('sc:' + it.id, it)).join('');
+  const el = $('#shortcuts'); if (!el) return;
+  el.innerHTML = cfg.shortcuts.filter(s => s.on).map(s => chip('sc:' + s.id, SHORTCUTS[s.id])).join('');
+}
+function renderWidgets() {
+  const el = $('#widgets'); if (!el) return;
+  el.innerHTML = cfg.widgets.filter(w => w.on).map(w => ({
+    weather: '<button class="widget weather f" data-act="weather" id="weather"></button>',
+    ambi: '<div class="widget" id="ambi"></div>',
+    news: `<button class="widget f" data-act="news"><div class="w-head"><span>Notícias</span><span class="pill">${cfg.newsCat === 'Todas' ? 'Simulado' : cfg.newsCat}</span></div><div id="newsList"></div></button>`
+  }[w.id])).join('');
+  renderWeather(); renderAmbi(); renderNews();
 }
 
+/* ---------- Clima, Ambilight, notícias ---------- */
 const toMin = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
 const isNightAt = m => m < toMin(SUNRISE) || m >= toMin(SUNSET);
-const tempAt = h => Math.round(21 + 5 * Math.sin((h - 9) * Math.PI / 12));
+const cityOff = () => (CITIES.find(c => c[0] === cfg.city) || [, 0])[1];
+const tempAt = h => Math.round(21 + cityOff() + 5 * Math.sin((h - 9) * Math.PI / 12));
+const fmtT = t => (cfg.unit === 'F' ? Math.round(t * 9 / 5 + 32) : t) + '°';
 const kindAt = h => isNightAt(h * 60 + 30) ? 'moon' : ['partly', 'partly', 'cloud', 'sun'][h % 4];
 function renderWeather() {
   const h = new Date().getHours();
-  const temps = [...Array(24)].map((_, i) => tempAt(i));
   const k = kindAt(h);
+  $('#wMini').innerHTML = `${W[k]}${fmtT(tempAt(h))}`;
+  const el = $('#weather'); if (!el) return;
+  const temps = [...Array(24)].map((_, i) => tempAt(i));
   const desc = { sun: 'Ensolarado', partly: 'Parcialmente nublado', cloud: 'Nublado', moon: 'Céu limpo' }[k];
-  const hours = [1, 2, 3, 4, 5, 6].map(d => { const hh = (h + d) % 24; return `<div><span>${hh}h</span>${W[kindAt(hh)]}<b>${tempAt(hh)}°</b></div>`; }).join('');
-  $('#weather').innerHTML = `
+  const hours = [1, 2, 3, 4, 5, 6].map(d => { const hh = (h + d) % 24; return `<div><span>${hh}h</span>${W[kindAt(hh)]}<b>${fmtT(tempAt(hh))}</b></div>`; }).join('');
+  el.innerHTML = `
     <div class="w-now">
-      <div class="w-head"><span>${CITY}</span></div>
-      <div class="w-temp">${W[k]}<b>${tempAt(h)}°</b></div>
+      <div class="w-head"><span>${cfg.city}</span></div>
+      <div class="w-temp">${W[k]}<b>${fmtT(tempAt(h))}</b></div>
       <div class="w-desc">${desc}</div>
-      <div class="w-mm">Máx. ${Math.max(...temps)}°  Mín. ${Math.min(...temps)}°</div>
+      <div class="w-mm">Máx. ${fmtT(Math.max(...temps))}  Mín. ${fmtT(Math.min(...temps))}</div>
     </div>
     <div class="w-hours">
       <div class="hours">${hours}</div>
       <div class="sun-times"><span>${ICON.rise} Nascer ${SUNRISE}</span><span>${ICON.set} Pôr do sol ${SUNSET}</span></div>
     </div>`;
-  $('#wMini').innerHTML = `${W[k]}${tempAt(h)}°`;
 }
 function renderAmbi() {
+  const el = $('#ambi'); if (!el) return;
   const m = state.ambi.mode, b = state.ambi.bright;
   const label = AMBI_MODES.find(x => x[0] === m)[2];
-  $('#ambi').innerHTML = `
+  el.innerHTML = `
     <div class="w-head"><span>Ambilight</span><span class="pill">${label}</span></div>
     <div class="ambi-mid">
       <div class="mini-tv"></div>
@@ -528,13 +770,24 @@ function renderAmbi() {
     </div>
     <div class="modes">${AMBI_MODES.map(([id, l]) => `<button class="mode f ${id === m ? 'on' : ''}" data-act="ambi:mode:${id}">${l}</button>`).join('')}</div>`;
 }
-let newsIdx = 0;
+let newsIdx = 0, newsTimer;
+const newsList = () => cfg.newsCat === 'Todas' ? NEWS : NEWS.filter(n => n.cat === cfg.newsCat);
 function renderNews() {
-  $('#newsList').innerHTML = [0, 1].map(o => NEWS[(newsIdx + o) % NEWS.length])
+  const el = $('#newsList'); if (!el) return;
+  const list = newsList();
+  el.innerHTML = list.slice(newsIdx, newsIdx + 2).concat(list.length > 2 && newsIdx + 2 > list.length ? list.slice(0, newsIdx + 2 - list.length) : [])
     .map(n => `<div class="n"><span class="src" style="color:${n.c}">${n.cat} <em>· ${n.ago}</em></span><p>${n.t}</p></div>`).join('');
 }
+function restartNews() {
+  clearInterval(newsTimer);
+  newsTimer = setInterval(() => {
+    const l = $('#newsList'); if (!l) return;
+    l.classList.add('out');
+    setTimeout(() => { newsIdx = (newsIdx + 2) % newsList().length; renderNews(); l.classList.remove('out'); }, 400);
+  }, cfg.newsSpeed * 1000);
+}
 
-/* ---------- Tema, moldura, Ambilight ---------- */
+/* ---------- Tema, aparência, moldura, Ambilight ---------- */
 function applyTheme() {
   const n = new Date();
   const t = state.theme === 'auto' ? (isNightAt(n.getHours() * 60 + n.getMinutes()) ? 'dark' : 'light') : state.theme;
@@ -542,6 +795,11 @@ function applyTheme() {
   const keep = document.activeElement && document.activeElement.dataset.act === 'hdr:theme';
   renderIcons();
   if (keep) refocus('hdr:theme');
+}
+function applyLook() {
+  document.documentElement.style.setProperty('--accent', cfg.accent);
+  document.documentElement.dataset.motion = cfg.motion;
+  $('.screen').dataset.bg = cfg.bg;
 }
 function cycleTheme() {
   const order = ['light', 'dark', 'auto'];
@@ -573,17 +831,40 @@ function layout() {
   Object.assign($('#glow').style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
   document.body.classList.toggle('noframe', !fr);
 }
+function renderHome() {
+  renderHeader(); renderBlocks(); tick(); scrollTo(scrollY);
+}
+
+/* ---------- Rolagem da tela inicial ---------- */
+const sections = () => [$('#header'), ...document.querySelectorAll('#blocks > .block')];
+const maxScroll = () => Math.max(0, $('#content').offsetHeight + 90 - 1080);
+function scrollTo(y) {
+  scrollY = Math.max(0, Math.min(y, maxScroll()));
+  $('#content').style.transform = `translateY(${-scrollY}px)`;
+  for (const s of sections()) {
+    const top = s.offsetTop, bot = top + s.offsetHeight;
+    s.classList.toggle('off', top < scrollY - 10 || bot > scrollY + 1070);
+  }
+}
+function ensureVisible(el) {
+  const b = el.closest('#header, .block'); if (!b) return;
+  const top = b.offsetTop, bot = top + b.offsetHeight;
+  if (top >= scrollY + 40 && bot <= scrollY + 1060 && !b.classList.contains('off')) return;
+  let y = top - 150;
+  if (b.id === 'header' || y < 300) y = 0;
+  scrollTo(y);
+}
 
 /* ---------- Navegação por controle remoto ---------- */
 function focusEl(el) { if (el) el.focus({ preventScroll: true }); }
 function refocus(act) { focusEl(document.querySelector(`[data-act="${CSS.escape(act)}"]`)); }
+const firstHome = () => $('#blocks .f') || $('#header .f');
 function candidates() {
-  const root = state.panel ? $('#overlay') : $('#content');
-  return [...root.querySelectorAll('.f')];
+  return [...(state.panel ? $('#overlay') : $('#content')).querySelectorAll('.f')];
 }
 function move(dir) {
   const list = candidates(), cur = document.activeElement;
-  if (!list.includes(cur)) { focusEl(state.panel ? list[0] : $('.art')); return; }
+  if (!list.includes(cur)) { focusEl(state.panel ? list[0] : firstHome()); return; }
   const a = cur.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2;
   let best = null, bs = Infinity;
   for (const e of list) {
@@ -607,19 +888,13 @@ function move(dir) {
   }
   focusEl(best);
 }
-function setPage(p) {
-  if (state.page === p) return;
-  state.page = p;
-  const y = p ? -($('#dock').offsetTop - 150) : 0;
-  $('#content').style.transform = `translateY(${y}px)`;
-  $('#content').dataset.pageNow = p;
-}
 function back() {
-  if (state.panel) closePanel();
-  else if (state.page === 1) focusEl($('.art'));
+  if (state.moving) dropMove();
+  else if (state.panel) closePanel();
+  else if (scrollY > 0) focusEl(firstHome());
 }
 
-/* ---------- Painéis ---------- */
+/* ---------- Painéis simples ---------- */
 const PANELS = {
   bt: () => ({
     title: 'Bluetooth', sub: 'Dispositivos pareados com a TV',
@@ -631,50 +906,245 @@ const PANELS = {
   audio: () => ({
     title: 'Saída de som', sub: 'Onde o áudio da TV vai tocar',
     rows: AUDIO.map(o => ({ act: 'audio:' + o.id, icon: o.icon, label: o.label, sub: o.sub, check: true, on: state.audio === o.id }))
-  }),
-  settings: () => ({
-    title: 'Ajustes do launcher', sub: 'Aparência e comportamento da tela inicial',
-    rows: [
-      { heading: 'Tema' },
-      { act: 'theme:light', icon: 'sun', label: 'Claro', sub: 'Sempre claro', check: true, on: state.theme === 'light' },
-      { act: 'theme:dark', icon: 'moon', label: 'Escuro', sub: 'Sempre escuro', check: true, on: state.theme === 'dark' },
-      { act: 'theme:auto', icon: 'auto', label: 'Automático', sub: `Escurece no pôr do sol (${SUNSET}) e clareia às ${SUNRISE}`, check: true, on: state.theme === 'auto' },
-      { heading: 'Pré-visualização' },
-      { act: 'frame', icon: 'ambi', label: 'Moldura da TV e Ambilight', sub: 'Só existe no protótipo do computador', toggle: true, on: state.frame },
-      { heading: 'Sistema' },
-      { act: 'sc:sys', icon: 'gear', label: 'Ajustes da TV', sub: 'Imagem, som e rede no menu original da Philips' }
-    ]
-  }),
-  apps: () => ({
-    title: 'Todos os apps', sub: 'Outros apps instalados na TV', grid: true,
-    rows: MORE_APPS.map(([n, c]) => ({ act: 'more:' + n, label: n, color: c }))
   })
 };
 function rowHtml(r) {
   if (r.heading) return `<div class="sec">${r.heading}</div>`;
+  if (r.note) return `<p class="note">${r.note}</p>`;
+  const lifted = state.moving && r.act === `move:${state.moving.list}:${state.moving.id}`;
   const end = r.check ? `<span class="radio ${r.on ? 'on' : ''}">${r.on ? ICON.check : ''}</span>`
     : r.toggle ? `<span class="switch ${r.on ? 'on' : ''}"><i></i></span>`
-    : r.end ? `<span class="end-t ${r.on ? 'pos' : ''}">${r.end}</span>` : '';
-  return `<button class="row f" data-act="${r.act}"><span class="ico">${ICON[r.icon]}</span><span><b>${r.label}</b>${r.sub ? `<small>${r.sub}</small>` : ''}</span>${end}</button>`;
+    : r.value != null ? `<span class="val">‹ ${r.value} ›</span>`
+    : r.move ? `<span class="grip">${lifted ? 'Soltar' : 'Mover'} ${ICON.grip}</span>`
+    : r.end ? `<span class="end-t ${r.on ? 'pos' : ''}">${r.end}</span>` : '<span></span>';
+  const sub = lifted ? '↑ ↓ para mover · Enter para soltar' : r.sub;
+  const cls = [lifted && 'lifted', r.danger && 'danger', r.sw && !r.swOn && 'hidden-item'].filter(Boolean).join(' ');
+  const ico = r.thumb ? `<span class="ico bare">${r.thumb}</span>` : `<span class="ico">${ICON[r.icon] || ''}</span>`;
+  const main = `<button class="row f ${cls}" data-act="${r.act}">${ico}<span><b>${r.label}</b>${sub ? `<small>${sub}</small>` : ''}</span>${end}</button>`;
+  if (!r.sw) return main;
+  return `<div class="rw">${main}<button class="sw f" data-act="${r.sw}" title="Mostrar ou ocultar"><span class="switch ${r.swOn ? 'on' : ''}"><i></i></span></button></div>`;
 }
 function renderPanel() {
+  if (state.panel === 'custom') return renderSettings();
+  if (state.panel === 'apps') {
+    $('#overlay').innerHTML = `<div class="panel"><h2>Todos os apps</h2><p class="sub">Para escolher os apps da barra, use Personalizar → Apps</p><div class="grid">${
+      ALL_APPS.map(a => `<button class="gapp f" data-act="app:${a.id}"><span class="mt big">${tileHtml(a)}</span>${a.name}</button>`).join('')}</div></div>`;
+    return;
+  }
   const p = PANELS[state.panel]();
-  const body = p.grid
-    ? `<div class="grid">${p.rows.map(r => `<button class="gapp f" data-act="${r.act}"><span class="mono" style="background:${r.color}">${r.label[0]}</span>${r.label}</button>`).join('')}</div>`
-    : p.rows.map(rowHtml).join('');
-  $('#overlay').innerHTML = `<div class="panel"><h2>${p.title}</h2><p>${p.sub}</p>${body}</div>`;
+  $('#overlay').innerHTML = `<div class="panel"><h2>${p.title}</h2><p class="sub">${p.sub}</p>${p.rows.map(rowHtml).join('')}</div>`;
 }
 function openPanel(name) {
-  state.returnFocus = document.activeElement;
+  const cur = document.activeElement;
+  state.returnAct = cur && cur.dataset ? cur.dataset.act : null;
   state.panel = name;
   renderPanel();
   $('#overlay').classList.add('open');
   focusEl($('#overlay .f'));
 }
 function closePanel() {
-  state.panel = null;
+  state.panel = null; state.moving = null; state.confirmReset = false;
   $('#overlay').classList.remove('open');
-  focusEl(state.returnFocus);
+  const back = state.returnAct && document.querySelector(`#content [data-act="${CSS.escape(state.returnAct)}"]`);
+  focusEl(back || firstHome());
+}
+
+/* ---------- Painel Personalizar ---------- */
+const CATS = [
+  ['aparencia', 'Aparência', 'palette'], ['inicio', 'Tela inicial', 'layout'], ['cabecalho', 'Cabeçalho', 'header'],
+  ['relogio', 'Relógio flutuante', 'clock'], ['apps', 'Apps', 'grid'], ['entradas', 'Entradas e atalhos', 'hdmi'], ['widgets', 'Widgets', 'widgets'], ['sistema', 'Sistema', 'sliders']
+];
+const cyc = (key, icon, label, sub) => ({ act: 'cycle:' + key, icon, label, sub, value: labelOf(key, cfg[key]) });
+const tog = (key, icon, label, sub) => ({ act: 'tog:' + key, icon, label, sub, toggle: true, on: key === 'frame' ? state.frame : cfg[key] });
+const moveRow = (list, id, label, sub, look, on) => ({ act: `move:${list}:${id}`, move: true, label, sub, ...look, sw: `vis:${list}:${id}`, swOn: on });
+const SETTINGS = {
+  aparencia: () => ({
+    title: 'Aparência', sub: 'Cores, fundo e animações',
+    rows: [
+      { heading: 'Tema' },
+      { act: 'theme:light', icon: 'sun', label: 'Claro', sub: 'Sempre claro', check: true, on: state.theme === 'light' },
+      { act: 'theme:dark', icon: 'moon', label: 'Escuro', sub: 'Sempre escuro', check: true, on: state.theme === 'dark' },
+      { act: 'theme:auto', icon: 'auto', label: 'Automático', sub: `Escurece no pôr do sol (${SUNSET}) e clareia às ${SUNRISE}`, check: true, on: state.theme === 'auto' },
+      { heading: 'Estilo' },
+      cyc('accent', 'palette', 'Cor de destaque', 'Indicadores, botões ativos e chaves'),
+      cyc('bg', 'layout', 'Fundo', 'Fundo atrás dos blocos'),
+      cyc('motion', 'star', 'Animações', 'Reduzidas deixam a navegação mais seca e rápida'),
+      { heading: 'Pré-visualização' },
+      tog('frame', 'ambi', 'Moldura da TV e Ambilight', 'Só existe no protótipo do computador')
+    ]
+  }),
+  inicio: () => ({
+    title: 'Tela inicial', sub: 'Ordem e visibilidade dos blocos',
+    rows: [
+      { note: 'Selecione um bloco e use ↑ ↓ para mudar a ordem. A chave ao lado mostra ou esconde o bloco.' },
+      ...cfg.blocks.map(b => moveRow('blocks', b.id, BLOCKS[b.id].label, BLOCKS[b.id].sub, { icon: BLOCKS[b.id].icon }, b.on))
+    ]
+  }),
+  cabecalho: () => ({
+    title: 'Cabeçalho', sub: 'Título, abas, relógio e clima no topo',
+    rows: [
+      { heading: 'Título e abas' },
+      cyc('title', 'header', 'Título', 'Texto grande no topo da tela'),
+      tog('showTabs', 'layout', 'Mostrar abas', 'Explorar, Filmes e Séries'),
+      cyc('startTab', 'star', 'Aba inicial', 'Conteúdo exibido ao ligar a TV'),
+      { heading: 'Relógio e status' },
+      cyc('clock', 'info', 'Formato da hora', 'Relógio no canto superior direito'),
+      tog('showDate', 'info', 'Mostrar data', 'Dia da semana e data ao lado da hora'),
+      tog('showWeatherTop', 'sun', 'Mostrar clima no topo', 'Temperatura atual ao lado da data')
+    ]
+  }),
+  relogio: () => ({
+    title: 'Relógio flutuante', sub: 'Hora e clima por cima de qualquer app, com um botão do controle',
+    rows: [
+      { note: 'No protótipo, aperte H em qualquer tela, inclusive com um app aberto. Na TV, ele funcionará por cima de YouTube, Netflix e qualquer outro app.' },
+      { act: 'osd:test', icon: 'clock', label: 'Testar agora', sub: 'Mostra o relógio flutuante por alguns segundos' },
+      { heading: 'Conteúdo' },
+      tog('osdDate', 'info', 'Mostrar data', 'Dia da semana e data abaixo da hora'),
+      tog('osdTemp', 'sun', 'Mostrar temperatura', `Da cidade configurada em Widgets (${cfg.city})`),
+      tog('osdCity', 'globe', 'Mostrar cidade', 'Nome da cidade abaixo da temperatura'),
+      { heading: 'Exibição' },
+      cyc('osdPos', 'layout', 'Posição', 'Onde a barra aparece na tela'),
+      cyc('osdDur', 'clock', 'Tempo na tela', 'Some sozinha depois desse tempo'),
+      { heading: 'Botão do controle' },
+      { act: 'osd:key', icon: 'remote', label: 'Definir botão', sub: 'Na TV, este item espera você apertar o botão desejado', value: 'H (protótipo)' }
+    ]
+  }),
+  apps: () => ({
+    title: 'Apps', sub: `Ordem e apps da barra · ${cfg.apps.filter(a => a.on).length} na barra`,
+    rows: [
+      { note: `Selecione um app e use ↑ ↓ para mudar a posição. A chave coloca ou tira o app da barra. Cabem ${DOCK_VISIBLE} na tela; com mais, a barra rola para os lados.` },
+      ...cfg.apps.map(a => { const app = appById(a.id); return moveRow('apps', a.id, app.name, a.on ? 'Na barra' : 'Fora da barra', { thumb: `<span class="mt">${tileHtml(app)}</span>` }, a.on); })
+    ]
+  }),
+  entradas: () => ({
+    title: 'Entradas e atalhos', sub: 'Nomes das entradas HDMI e atalhos rápidos',
+    rows: [
+      { heading: 'Entradas' },
+      tog('showInputs', 'hdmi', 'Mostrar entradas', 'Grupo "Entradas" na tela inicial'),
+      ...INPUT_IDS.map(id => {
+        const info = inputInfo(id), on = cfg.inputs[id].on;
+        if (id === 'live') return { act: 'noop', icon: 'tv', label: 'TV ao Vivo', sub: 'Sintonizador da TV', sw: 'ivis:live', swOn: on };
+        return { act: 'cycle:iname:' + id, icon: info.icon, label: 'HDMI ' + id.slice(4), sub: (NO_SIGNAL.includes(id) ? 'Sem sinal agora · ' : '') + 'Enter troca o nome', value: cfg.inputs[id].name || 'Sem nome', sw: 'ivis:' + id, swOn: on };
+      }),
+      { heading: 'Atalhos' },
+      tog('showShortcuts', 'grid', 'Mostrar atalhos', 'Grupo "Atalhos" na tela inicial'),
+      ...cfg.shortcuts.map(s => moveRow('shortcuts', s.id, SHORTCUTS[s.id].label, null, { icon: SHORTCUTS[s.id].icon }, s.on))
+    ]
+  }),
+  widgets: () => ({
+    title: 'Widgets', sub: 'Ordem, visibilidade e opções de cada widget',
+    rows: [
+      { heading: 'Ordem e visibilidade' },
+      ...cfg.widgets.map(w => moveRow('widgets', w.id, WIDGETS[w.id].label, WIDGETS[w.id].sub, { icon: WIDGETS[w.id].icon }, w.on)),
+      { heading: 'Clima' },
+      cyc('city', 'globe', 'Cidade', 'Previsão simulada no protótipo'),
+      cyc('unit', 'sun', 'Unidade', 'Temperatura em todos os lugares'),
+      { heading: 'Notícias' },
+      cyc('newsCat', 'news', 'Categoria', 'Quais manchetes aparecem'),
+      cyc('newsSpeed', 'info', 'Trocar a cada', 'Tempo até mostrar as próximas manchetes'),
+      { heading: 'Ambilight' },
+      { note: 'O modo e o brilho do Ambilight ficam no próprio widget, para mudar rápido com o controle.' }
+    ]
+  }),
+  sistema: () => ({
+    title: 'Sistema', sub: 'Ajustes da TV e do launcher',
+    rows: [
+      { act: 'sc:sys', icon: 'sliders', label: 'Ajustes da TV', sub: 'Imagem, som e rede no menu original da Philips' },
+      { act: 'reset', icon: 'reset', label: state.confirmReset ? 'Pressione de novo para confirmar' : 'Restaurar padrões', sub: 'Volta a ordem, a visibilidade e as opções ao original', danger: true },
+      { heading: 'Sobre' },
+      { note: 'TV Launcher · protótipo v0.2 · conteúdo, clima, notícias e dispositivos simulados.' }
+    ]
+  })
+};
+function renderSettings() {
+  $('#overlay').innerHTML = `<div class="panel wide">
+    <nav class="side"><h2>Personalizar</h2><p class="sub">Tela inicial do launcher</p>
+      ${CATS.map(([id, l, i]) => `<button class="cat f ${id === state.cat ? 'active' : ''}" data-act="cat:${id}">${ICON[i]}${l}</button>`).join('')}
+    </nav>
+    <div class="main" id="smain"></div></div>`;
+  renderSettingsMain();
+}
+function renderSettingsMain(resetScroll) {
+  const main = $('#smain'); if (!main) return;
+  const prev = main.querySelector('.pscroll');
+  const top = prev && !resetScroll ? prev.scrollTop : 0;
+  const c = SETTINGS[state.cat]();
+  main.innerHTML = `<h2>${c.title}</h2><p class="sub">${c.sub}</p><div class="pscroll">${c.rows.map(rowHtml).join('')}</div>`;
+  const sc = main.querySelector('.pscroll');
+  sc.style.scrollBehavior = 'auto'; sc.scrollTop = top; sc.style.scrollBehavior = '';
+}
+function refreshPanel() { if (state.panel === 'custom') renderSettingsMain(); else renderPanel(); }
+function panelScroll(el) {
+  const sc = el.closest('.pscroll'); if (!sc) return;
+  const box = el.closest('.rw') || el;
+  const t = box.offsetTop, b = t + box.offsetHeight;
+  if (t < sc.scrollTop + 16) sc.scrollTop = t - 60;
+  else if (b > sc.scrollTop + sc.clientHeight - 16) sc.scrollTop = b - sc.clientHeight + 40;
+}
+function afterCfg() { saveCfg(); applyLook(); renderHome(); }
+function moveItem(d) {
+  const { list, id } = state.moving, arr = cfg[list];
+  const i = arr.findIndex(x => x.id === id), j = i + d;
+  if (j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  afterCfg(); renderSettingsMain(); refocus(`move:${list}:${id}`);
+  panelScroll(document.activeElement);
+}
+function dropMove() {
+  const act = `move:${state.moving.list}:${state.moving.id}`;
+  state.moving = null; renderSettingsMain(); refocus(act);
+  toast('Ordem salva');
+}
+
+/* ---------- App aberto (simulação) ---------- */
+function openApp(app, title) {
+  if (state.panel) closePanel();
+  state.appOpen = app.id;
+  $('#appview').innerHTML = `<div class="av-logo">${tileHtml(app)}</div>
+    <div class="av-txt">${title ? `<b>${title}</b>` : `<b>${app.name}</b>`}
+      Simulação do app aberto · aperte <kbd>H</kbd> para ver o relógio · <kbd>Esc</kbd> volta à tela inicial</div>`;
+  $('#appview').classList.add('open');
+}
+function closeApp() {
+  state.appOpen = null;
+  $('#appview').classList.remove('open');
+}
+
+/* ---------- Relógio flutuante ---------- */
+/* Aperto curto: mostra e some após o tempo configurado. Segurando: fica fixo e a contagem
+   só começa ao soltar. Repetições automáticas da tecla segurada são ignoradas. */
+let osdT, osdClockT, osdHeld = false;
+function clockText(n) {
+  const h = n.getHours(), m = String(n.getMinutes()).padStart(2, '0');
+  return cfg.clock === '12' ? `${h % 12 || 12}:${m} ${h < 12 ? 'AM' : 'PM'}` : `${String(h).padStart(2, '0')}:${m}`;
+}
+function showOsd(hold) {
+  const o = $('#osd'), n = new Date(), h = n.getHours();
+  const date = n.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' });
+  o.innerHTML = `<div class="osd-clock"><span class="osd-time">${clockText(n)}</span>${cfg.osdDate ? `<small>${date}</small>` : ''}</div>`
+    + (cfg.osdTemp ? `<span class="osd-sep"></span><div class="osd-w">${W[kindAt(h)]}<span><b>${fmtT(tempAt(h))}</b>${cfg.osdCity ? `<small>${cfg.city}</small>` : ''}</span></div>` : '')
+    + '<i class="osd-prog"></i>';
+  o.classList.toggle('top', cfg.osdPos === 'superior');
+  o.classList.add('show');
+  clearInterval(osdClockT);
+  osdClockT = setInterval(() => { const t = o.querySelector('.osd-time'); if (t) t.textContent = clockText(new Date()); }, 1000);
+  clearTimeout(osdT);
+  if (!hold) startOsdCountdown();
+}
+function startOsdCountdown() {
+  const p = $('#osd .osd-prog'); if (!p) return;
+  p.style.animation = `osdprog ${cfg.osdDur}s linear forwards`;
+  clearTimeout(osdT); osdT = setTimeout(hideOsd, cfg.osdDur * 1000);
+}
+function hideOsd() { clearTimeout(osdT); clearInterval(osdClockT); osdHeld = false; $('#osd').classList.remove('show'); }
+function osdKeyDown(e) {
+  if (e.repeat) return;
+  if ($('#osd').classList.contains('show') && !osdHeld) { hideOsd(); return; }
+  osdHeld = true; showOsd(true);
+}
+function osdKeyUp() {
+  if (!osdHeld) return;
+  osdHeld = false; startOsdCountdown();
 }
 
 /* ---------- Ações ---------- */
@@ -687,25 +1157,29 @@ function toast(msg) {
 function act(a) {
   const [k, v, w] = a.split(':');
   switch (k) {
-    case 'open': { const it = CONTENT[state.tab][+v]; toast(`Abrindo “${it.t}” no ${it.app}…`); break; }
-    case 'tab': focusEl($('.art')); break;
-    case 'app': toast(`Abrindo ${APPS.find(x => x.id === v).name}…`); break;
+    case 'open': { const it = CONTENT[state.tab][+v]; openApp(ALL_APPS.find(x => x.name === it.app), it.t); break; }
+    case 'tab': focusEl($('#hero .f') || firstHome()); break;
+    case 'app': openApp(appById(v)); break;
+    case 'osd':
+      if (v === 'test') showOsd();
+      else toast('Na TV, aqui você aperta o botão do controle que quer usar');
+      break;
     case 'input': {
       state.input = v; save('input'); renderInputs(); refocus(a);
-      const it = INPUTS.find(x => x.id === v);
+      const it = inputInfo(v);
       toast('Entrada: ' + (it.sub ? `${it.label} (${it.sub})` : it.label));
       break;
     }
     case 'sc':
-      if (v === 'ambi') refocus('ambi:mode:' + state.ambi.mode);
+      if (v === 'ambi') { const b = document.querySelector(`[data-act="ambi:mode:${state.ambi.mode}"]`); b ? focusEl(b) : toast('Ative o widget Ambilight em Personalizar → Widgets'); }
       else if (v === 'sys') toast('Abriria o menu de ajustes original da Philips');
       else openPanel(v);
       break;
     case 'hdr':
       if (v === 'bt') openPanel('bt');
-      if (v === 'inputs') refocus('input:' + state.input);
+      if (v === 'inputs') { const b = document.querySelector(`[data-act="input:${state.input}"]`) || $('#inputs .f'); b ? focusEl(b) : toast('As entradas estão ocultas em Personalizar'); }
       if (v === 'theme') cycleTheme();
-      if (v === 'settings') openPanel('settings');
+      if (v === 'settings') openPanel('custom');
       break;
     case 'ambi':
       if (v === 'mode') state.ambi.mode = w;
@@ -735,20 +1209,64 @@ function act(a) {
       toast('Som saindo por: ' + AUDIO.find(x => x.id === v).label);
       break;
     }
-    case 'theme': state.theme = v; save('theme'); applyTheme(); renderPanel(); refocus(a); break;
-    case 'frame': toggleFrame(); renderPanel(); refocus(a); break;
-    case 'more': toast(`Abrindo ${v}…`); break;
+    case 'theme': state.theme = v; save('theme'); applyTheme(); refreshPanel(); refocus(a); break;
+    /* Personalizar */
+    case 'cat': focusEl($('#smain .f')); break;
+    case 'cycle':
+      if (v === 'iname') cfg.inputs[w].name = nextOf(NAME_PRESETS, cfg.inputs[w].name);
+      else cfg[v] = nextOf(CYCLES[v].map(o => o[0]), cfg[v]);
+      if (v === 'startTab') state.tab = cfg.startTab;
+      if (v === 'newsCat') newsIdx = 0;
+      afterCfg(); if (v === 'newsSpeed') restartNews();
+      refreshPanel(); refocus(a);
+      break;
+    case 'tog':
+      if (v === 'frame') toggleFrame(); else { cfg[v] = !cfg[v]; afterCfg(); }
+      refreshPanel(); refocus(a);
+      break;
+    case 'vis': {
+      const item = cfg[v].find(x => x.id === w);
+      item.on = !item.on; afterCfg(); refreshPanel(); refocus(a);
+      break;
+    }
+    case 'ivis': cfg.inputs[v].on = !cfg.inputs[v].on; afterCfg(); refreshPanel(); refocus(a); break;
+    case 'move':
+      if (state.moving) { dropMove(); break; }
+      state.moving = { list: v, id: w }; renderSettingsMain(); refocus(a);
+      break;
+    case 'reset':
+      if (!state.confirmReset) {
+        state.confirmReset = true; refreshPanel(); refocus(a);
+        setTimeout(() => { if (state.confirmReset) { state.confirmReset = false; if (state.panel === 'custom' && state.cat === 'sistema') { refreshPanel(); refocus(a); } } }, 4000);
+      } else {
+        cfg = clone(DEFAULT_CFG); state.theme = 'auto'; save('theme'); state.tab = cfg.startTab; state.confirmReset = false;
+        afterCfg(); applyTheme(); restartNews(); refreshPanel(); refocus(a);
+        toast('Padrões restaurados');
+      }
+      break;
   }
 }
 
 /* ---------- Eventos ---------- */
 document.addEventListener('keydown', e => {
   const dirs = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
+  if (state.moving) {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); moveItem(e.key === 'ArrowUp' ? -1 : 1); return; }
+    if (['Enter', ' ', 'Escape', 'Backspace'].includes(e.key)) { e.preventDefault(); dropMove(); return; }
+    if (dirs[e.key]) { e.preventDefault(); return; }
+  }
+  if (e.key === 'h' || e.key === 'H') { osdKeyDown(e); return; }
+  if (state.appOpen) {
+    if (e.key === 'Escape' || e.key === 'Backspace') closeApp();
+    if (e.key !== 't' && e.key !== 'T' && e.key !== 'f' && e.key !== 'F') { e.preventDefault(); return; }
+  }
   if (dirs[e.key]) { e.preventDefault(); move(dirs[e.key]); }
   else if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); back(); }
   else if (e.key === 't' || e.key === 'T') cycleTheme();
-  else if (e.key === 'f' || e.key === 'F') toggleFrame();
+  else if (e.key === 'f' || e.key === 'F') { toggleFrame(); if (state.panel === 'custom' && state.cat === 'aparencia') { refreshPanel(); refocus('tog:frame'); } }
 });
+document.addEventListener('keyup', e => { if (e.key === 'h' || e.key === 'H') osdKeyUp(); });
+addEventListener('blur', osdKeyUp);
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (el) act(el.dataset.act);
@@ -756,9 +1274,19 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('focusin', e => {
   const el = e.target;
-  if (state.panel) return;
-  const sec = el.closest('[data-page]');
-  if (sec) setPage(+sec.dataset.page);
+  if (state.panel) {
+    if (el.classList.contains('cat')) {
+      const c = el.dataset.act.split(':')[1];
+      if (c !== state.cat) {
+        state.cat = c; state.confirmReset = false;
+        document.querySelectorAll('.cat').forEach(x => x.classList.toggle('active', x === el));
+        renderSettingsMain(true);
+      }
+    } else panelScroll(el);
+    return;
+  }
+  ensureVisible(el);
+  if (el.closest('.dock-vp')) ensureDockTile(el);
   if (el.classList.contains('tab')) {
     const t = el.dataset.act.split(':')[1];
     if (t !== state.tab) {
@@ -772,39 +1300,36 @@ document.addEventListener('focusin', e => {
 });
 document.addEventListener('mousemove', e => {
   const el = e.target.closest('.f');
-  if (!el || el === document.activeElement) return;
+  if (!el || el === document.activeElement || state.moving) return;
   if (state.panel && !$('#overlay').contains(el)) return;
-  const sec = el.closest('[data-page]');
-  if (!state.panel && sec && +sec.dataset.page !== state.page) return;
+  const sec = el.closest('#header, .block');
+  if (!state.panel && sec && sec.classList.contains('off')) return;
   focusEl(el);
 });
 let wheelT = 0;
 $('#stage').addEventListener('wheel', e => {
   if (state.panel || Date.now() - wheelT < 600) return;
   wheelT = Date.now();
-  if (e.deltaY > 0 && state.page === 0) refocus('input:' + state.input);
-  else if (e.deltaY < 0 && state.page === 1) focusEl($('.art'));
+  if (e.deltaY > 0) {
+    const next = sections().find(s => s.offsetTop > scrollY + 200 && s.classList.contains('off'));
+    if (next) focusEl(next.querySelector('.f'));
+  } else if (scrollY > 0) focusEl(firstHome());
 }, { passive: true });
-$('.screen').addEventListener('scroll', e => { e.target.scrollTop = 0; e.target.scrollLeft = 0; });
+for (const sel of ['.screen', '#stage']) $(sel).addEventListener('scroll', e => { e.target.scrollTop = 0; e.target.scrollLeft = 0; });
 addEventListener('resize', layout);
 
 function tick() {
   const n = new Date();
-  $('#clock').textContent = n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  $('#clock').textContent = clockText(n);
   $('#date').textContent = n.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  if (cfg.title === 'saudacao') $('#title').textContent = greeting();
   if (state.theme === 'auto') applyTheme();
 }
 setInterval(tick, 15000);
 setInterval(renderWeather, 10 * 60000);
-setInterval(() => {
-  const l = $('#newsList'); l.classList.add('out');
-  setTimeout(() => { newsIdx = (newsIdx + 2) % NEWS.length; renderNews(); l.classList.remove('out'); }, 400);
-}, 9000);
 
-renderTabs(); renderIcons(); renderHero(); renderDock(); renderInputs(); renderShortcuts();
-renderWeather(); renderAmbi(); renderNews();
-applyTheme(); applyGlow(); layout(); tick();
-focusEl($('.art'));
+applyLook(); applyTheme(); renderHome(); applyGlow(); layout(); restartNews();
+focusEl(firstHome());
 </script>
 </body>
 </html>

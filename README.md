@@ -23,6 +23,11 @@ Abra http://localhost:5178 e navegue com o teclado como se fosse o controle remo
 | Esc | voltar |
 | T | alternar tema (claro / escuro / automático) |
 | F | mostrar/ocultar moldura da TV e Ambilight |
+| H | relógio flutuante (hora e clima por cima de qualquer tela) |
+
+## Documentação
+
+- [Relógio flutuante na TV](docs/relogio-flutuante.md): como o botão do controle mostra a hora por cima de qualquer app, e a configuração via ADB.
 
 ## Próximas etapas
 
