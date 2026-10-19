@@ -36,7 +36,10 @@ class ClockOverlayService : AccessibilityService() {
     private val main = Handler(Looper.getMainLooper())
     private val prefs by lazy { getSharedPreferences("tvl", MODE_PRIVATE) }
 
-    override fun onServiceConnected() { instance = this }
+    override fun onServiceConnected() {
+        instance = this
+        prefs.edit().putBoolean("osd_capturing", false).apply()   // nunca reinicia preso no modo de escolha
+    }
     override fun onDestroy() { hideBar(); instance = null; super.onDestroy() }
     override fun onAccessibilityEvent(event: AccessibilityEvent?) = Unit
     override fun onInterrupt() = hideBar()
@@ -46,25 +49,28 @@ class ClockOverlayService : AccessibilityService() {
     private var bar: View? = null
     private var timeView: TextView? = null
     private var held = false
-    private var swallowUp = 0
+    private var swallowBackUp = false
 
     private val osd get() = try { JSONObject(prefs.getString("osd_cfg", "{}")!!) } catch (e: Exception) { JSONObject() }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
-        // "Definir botão": a próxima tecla vira o gatilho (Voltar cancela).
+        // "Adicionar botões": cada botão apertado é identificado e entra na lista. Setas, OK, Voltar, Home e volume
+        // não podem ser gatilho e continuam funcionando normalmente (Voltar encerra a escolha).
         if (prefs.getBoolean("osd_capturing", false)) {
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                val e = prefs.edit().putBoolean("osd_capturing", false)
-                if (event.keyCode != KeyEvent.KEYCODE_BACK) e.putInt("osd_key", event.keyCode)
+            val code = event.keyCode
+            val reserved = code in RESERVED
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                val e = prefs.edit().putInt("osd_last", code).putBoolean("osd_last_ok", !reserved).putLong("osd_last_at", System.currentTimeMillis())
+                if (code == KeyEvent.KEYCODE_BACK) e.putBoolean("osd_capturing", false)
+                if (!reserved) e.putString("osd_keys", (keys(prefs) + code).joinToString(","))
                 e.apply()
-                swallowUp = event.keyCode
             }
-            return true
+            if (code == KeyEvent.KEYCODE_BACK) { swallowBackUp = true; return true }   // Voltar só encerra a escolha
+            return !reserved
         }
-        if (event.action == KeyEvent.ACTION_UP && event.keyCode == swallowUp) { swallowUp = 0; return true }
+        if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP && swallowBackUp) { swallowBackUp = false; return true }
 
-        val key = prefs.getInt("osd_key", 0)
-        if (key == 0 || event.keyCode != key) return false            // outras teclas seguem para o app
+        if (event.keyCode !in keys(prefs)) return false                 // outras teclas seguem para o app
         when (event.action) {
             KeyEvent.ACTION_DOWN -> if (event.repeatCount == 0) {
                 if (bar != null && !held) hideBar()                     // aperto com a barra visível: esconde
@@ -282,6 +288,24 @@ class ClockOverlayService : AccessibilityService() {
 
     companion object {
         @Volatile var instance: ClockOverlayService? = null
+        /** Teclas que nunca viram gatilho do relógio (navegação, Home, volume, energia). */
+        val RESERVED = setOf(
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BACK,
+            KeyEvent.KEYCODE_HOME, KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_VOLUME_MUTE,
+            KeyEvent.KEYCODE_POWER
+        )
+
+        /** Botões do relógio salvos (o formato antigo, com um só botão em "osd_key", é migrado). */
+        fun keys(prefs: android.content.SharedPreferences): Set<Int> {
+            val csv = prefs.getString("osd_keys", null)
+            if (csv == null) {
+                val old = prefs.getInt("osd_key", 0)
+                return if (old != 0 && old !in RESERVED) setOf(old) else emptySet()
+            }
+            return csv.split(',').mapNotNull { it.trim().toIntOrNull() }.filter { it !in RESERVED }.toSet()
+        }
+
         const val STYLE = "org.droidtv.ambilight.AMBILIGHTSTYLE"
         const val QUICK = "org.droidtv.ambilight.AMBILIGHTOSD"
     }

@@ -1312,7 +1312,7 @@ const SETTINGS = {
       cyc('osdPos', 'layout', 'Posição', 'Onde a barra aparece na tela'),
       cyc('osdDur', 'clock', 'Tempo na tela', 'Some sozinha depois desse tempo'),
       { heading: 'Botão do controle' },
-      osdKeyRow(),
+      ...osdKeyRows(),
       ...(TV ? [{ note: 'Funcionam os botões que chegam ao Android, como os coloridos, Info ou Opções. Home, Ambilight e os atalhos de apps costumam ficar com a Philips.' }] : [])
     ]
   }),
@@ -1464,27 +1464,46 @@ function closeApp() {
 /* Na TV quem mostra a barra é o serviço Android (por cima de qualquer app); aqui só ficam as opções. */
 const KEY_NAMES = { PROG_RED: 'Vermelho', PROG_GREEN: 'Verde', PROG_YELLOW: 'Amarelo', PROG_BLUE: 'Azul', INFO: 'Info', GUIDE: 'Guia', CAPTIONS: 'Legendas',
   TV_INPUT: 'Fonte', SETTINGS: 'Ajustes', MENU: 'Menu', BOOKMARK: 'Favoritos', MEDIA_RECORD: 'Gravar', DVR: 'Gravações', TV: 'TV' };
-const osdKey = () => { try { return JSON.parse(TV.osdKey()); } catch (e) { return { code: 0, name: '', capturing: false }; } };
-function osdKeyRow() {
-  if (!TV) return { act: 'osd:key', icon: 'remote', label: 'Definir botão', sub: 'Na TV, este item espera você apertar o botão desejado', value: 'H (protótipo)' };
-  const k = osdKey();
-  return { act: 'osd:key', icon: 'remote', label: 'Definir botão',
-    sub: k.capturing ? 'Aperte agora o botão do controle (Voltar cancela)' : 'Selecione e depois aperte o botão que vai mostrar o relógio',
-    value: k.capturing ? 'Aguardando…' : k.code ? (KEY_NAMES[k.name] || k.name) : 'Nenhum' };
+const keyName = k => KEY_NAMES[k.name] || k.name;
+const osdKeys = () => { try { return JSON.parse(TV.osdKeys()); } catch (e) { return { keys: [], capturing: false }; } };
+const COLOR_KEYS = [183, 184, 185, 186];   // KEYCODE_PROG_RED, GREEN, YELLOW, BLUE
+function osdKeyRows() {
+  if (!TV) return [{ act: 'osd:key', icon: 'remote', label: 'Definir botão', sub: 'Na TV, este item espera você apertar o botão desejado', value: 'H (protótipo)' }];
+  const k = osdKeys(), last = k.last && Date.now() - k.last.at < 20000 ? k.last : null;
+  return [
+    ...k.keys.map(x => ({ act: 'osdk:del:' + x.code, icon: 'remote', label: keyName(x), sub: 'Mostra o relógio · Enter remove', end: 'Remover' })),
+    ...(k.keys.length ? [] : [{ note: 'Nenhum botão escolhido ainda.' }]),
+    { act: 'osd:key', icon: 'search', label: k.capturing ? 'Aperte os botões agora…' : 'Adicionar botões',
+      sub: k.capturing ? (last ? `Último: ${keyName(last)} · ${last.ok ? 'adicionado' : 'não pode ser usado'} · Voltar termina` : 'Aperte um ou mais botões do controle · Voltar termina')
+        : 'Identifica e adiciona cada botão que você apertar', end: k.capturing ? 'Ouvindo' : '', on: k.capturing },
+    { act: 'osdk:colors', icon: 'palette', label: 'Usar os 4 botões coloridos', sub: 'Vermelho, verde, amarelo e azul' }
+  ];
 }
+/* Escolha de botões: o serviço identifica cada tecla; aqui só mostramos o que chegou. Setas e OK seguem navegando. */
 let captureT;
 function captureKey() {
   if (!TV.serviceOn()) { toast('O serviço do TV Launcher está desligado'); return; }
-  TV.osdCapture(true); refreshPanel(); refocus('osd:key');
-  const started = Date.now();
+  TV.osdCapture(true);
+  let seen = (osdKeys().last || {}).at || 0, idleSince = Date.now();
+  const redraw = () => {
+    if (state.panel !== 'custom' || state.cat !== 'relogio') return;
+    const a = document.activeElement && document.activeElement.dataset.act;
+    refreshPanel(); if (a) refocus(a);
+  };
+  redraw();
   clearInterval(captureT);
   captureT = setInterval(() => {
-    const k = osdKey();
-    if (k.capturing && Date.now() - started < 15000) return;
+    const k = osdKeys();
+    if (k.last && k.last.at !== seen) {
+      seen = k.last.at; idleSince = Date.now();
+      toast(k.last.ok ? `${keyName(k.last)} adicionado` : `${keyName(k.last)} não pode ser usado`);
+      redraw();
+    }
+    if (k.capturing && Date.now() - idleSince < 15000) return;
     clearInterval(captureT);
     if (k.capturing) TV.osdCapture(false);
-    if (state.panel === 'custom' && state.cat === 'relogio') { refreshPanel(); refocus('osd:key'); }
-    toast(k.code ? 'Botão do relógio: ' + (KEY_NAMES[k.name] || k.name) : 'Nenhum botão definido');
+    redraw();
+    toast(k.keys.length ? 'Botões do relógio: ' + k.keys.map(keyName).join(', ') : 'Nenhum botão definido');
   }, 300);
 }
 function syncOsd() {
@@ -1542,6 +1561,14 @@ function act(a) {
     case 'heromore': moreHero(); break;
     case 'tab': focusEl($('#hero .f') || firstHome()); break;
     case 'app': openApp(appById(v)); break;
+    case 'osdk': {
+      const cur = osdKeys().keys.map(x => x.code);
+      const next = v === 'colors' ? [...new Set([...cur, ...COLOR_KEYS])] : cur.filter(c => c !== +w);
+      TV.osdSetKeys(next.join(','));
+      toast(v === 'colors' ? 'Botões coloridos adicionados' : 'Botão removido');
+      refreshPanel(); refocus(v === 'colors' ? a : 'osd:key');
+      break;
+    }
     case 'osd':
       if (v === 'test') TV ? (TV.osdTest() || toast('O serviço do TV Launcher está desligado')) : showOsd();
       else TV ? captureKey() : toast('Na TV, aqui você aperta o botão do controle que quer usar');

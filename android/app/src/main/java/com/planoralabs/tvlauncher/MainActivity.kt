@@ -301,14 +301,22 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun osdCapture(start: Boolean) { prefs.edit().putBoolean("osd_capturing", start).apply() }
 
-        /** {code, name, capturing}: botão escolhido (name é o KEYCODE sem o prefixo). */
+        /** {keys: [{code, name}], capturing, last: {code, name, ok, at}}. name é o KEYCODE sem o prefixo. */
         @JavascriptInterface
-        fun osdKey(): String {
-            val code = prefs.getInt("osd_key", 0)
-            return JSONObject().put("code", code)
-                .put("name", if (code == 0) "" else KeyEvent.keyCodeToString(code).removePrefix("KEYCODE_"))
-                .put("capturing", prefs.getBoolean("osd_capturing", false)).toString()
+        fun osdKeys(): String {
+            val name = { c: Int -> KeyEvent.keyCodeToString(c).removePrefix("KEYCODE_") }
+            val keys = JSONArray()
+            ClockOverlayService.keys(prefs).forEach { keys.put(JSONObject().put("code", it).put("name", name(it))) }
+            val o = JSONObject().put("keys", keys).put("capturing", prefs.getBoolean("osd_capturing", false))
+            val last = prefs.getInt("osd_last", 0)
+            if (last != 0) o.put("last", JSONObject().put("code", last).put("name", name(last))
+                .put("ok", prefs.getBoolean("osd_last_ok", false)).put("at", prefs.getLong("osd_last_at", 0)))
+            return o.toString()
         }
+
+        /** Troca a lista de botões do relógio (códigos separados por vírgula). */
+        @JavascriptInterface
+        fun osdSetKeys(csv: String) { prefs.edit().putString("osd_keys", csv).apply() }
 
         @JavascriptInterface
         fun osdTest(): Boolean = service?.test() != null
@@ -350,7 +358,15 @@ class MainActivity : Activity() {
 
         @JavascriptInterface
         fun openInput(id: String): Boolean {
-            if (id == "live") return openApp("tv")
+            // TV ao vivo: pede o sintonizador (antena/cabo) explicitamente; só abrir o app voltaria à última fonte (ex.: HDMI 1).
+            if (id == "live") {
+                val tuner = getSystemService(TvInputManager::class.java)?.tvInputList
+                    ?.filter { it.type == TvInputInfo.TYPE_TUNER && it.parentId == null && it.serviceInfo.packageName != "com.google.android.videos" }
+                    ?.minByOrNull { it.id.substringAfterLast("HW").toIntOrNull() ?: Int.MAX_VALUE }
+                    ?: return openApp("tv")
+                val uri = TvContract.buildChannelUriForPassthroughInput(tuner.id)
+                return launch(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "vnd.android.cursor.item/channel")) || openApp("tv")
+            }
             val n = id.removePrefix("hdmi").toIntOrNull() ?: return false
             val input = hdmiInputs().getOrNull(n - 1) ?: return false
             val uri = TvContract.buildChannelUriForPassthroughInput(input.id)
